@@ -1,2 +1,2 @@
-# Game-Project
+# Productivity App
 Game!
