@@ -5,6 +5,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 
+#test
 class LoginPage(App):
     def build(self):
         self.layout = BoxLayout(orientation='vertical')
