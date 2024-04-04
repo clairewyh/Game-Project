@@ -4,12 +4,12 @@ from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.uix.button import Button
 
-Builder.load_file('main.kv')
+Builder.load_file('startinghomepage.kv')
 
 class Homepage(BoxLayout):
     pass
 
-class RoundedButton(Button):
+class UserButton(Button):
     pass
 
 class FitnessApp(App):
