@@ -1,0 +1,39 @@
+<Page>:
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.2
+        Label:
+            markup: True
+            text: '[b]Welcome to the Login Page[/b]'
+            font_size: '0.7cm'
+
+    Label:
+        text: 'Username:'
+        size_hint_y: 0.1
+    TextInput:
+        multiline: False
+        size_hint_y: 0.1
+        id: username_input
+
+    Label:
+        text: 'Password:'
+        size_hint_y: 0.1
+    TextInput:
+        multiline: False
+        password: True
+        size_hint_y: 0.1
+        id: password_input
+
+    Button:
+        text: 'Login'
+        size_hint_y: 0.1
+        background_color: 0.2, 0.8, 1, 1
+        background_normal: ''
+        on_press: root.login()
+
+    Button:
+        text: 'Sign Up'
+        size_hint_y: 0.1
+        background_color: 0.2, 0.8, 1, 1
+        background_normal: ''
+        on_press: root.signup()
