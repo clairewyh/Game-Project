@@ -1,0 +1,35 @@
+#:import Factory kivy.factory.Factory
+
+<MyPopup@Popup>
+    auto_dismiss:True
+    size_hint:0.6,0.2
+    pos_hint: {"x":0.2, "top":1}
+    title: "Add Class"
+    BoxLayout:
+        orientation: "vertical"
+        TextInput:        
+            text: "Name your class: "
+            multiline: False
+
+<MainScreen>
+    FloatLayout:
+        orientation: "vertical"
+        size: root.width, root.height
+            
+        Button:
+            text: '+'
+            size_hint: None, None
+            size: "50dp", "50dp"
+            pos_hint: {"right":1, "top":1}
+            on_release: Factory.MyPopup().open()
+
+        Label:
+            text: "Classes"
+            font_size: 43
+            height: "50dp"
+            padding: "10dp", "10dp"
+            pos_hint: {"left":0, "top":1}
+        
+    
+
+
