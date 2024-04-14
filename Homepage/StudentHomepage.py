@@ -1,3 +1,4 @@
+import requests
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
@@ -5,17 +6,12 @@ from kivy.uix.textinput import TextInput
 from kivy.lang import Builder
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.widget import Widget
-from kivy.graphics import Rectangle
-import requests
-import json
 
-Builder.load_file("TeacherHomepageDesign.kv")
+Builder.load_file("HomepageDesign.kv")
+
 
 class MainScreen(BoxLayout):
     class_data = {}
-    firebase_url = "https://class-codes-10c3f-default-rtdb.firebaseio.com/.json"
 
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
@@ -34,7 +30,7 @@ class MainScreen(BoxLayout):
         if class_code:
             class_name = self.validate_class_code(class_code)
             if class_name:
-                class_button = ClassButton(text=class_name, bold=True)
+                class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
                 self.ids.classes_layout.add_widget(class_button)
             else:
                 # Show error message if class code is not valid
@@ -42,21 +38,26 @@ class MainScreen(BoxLayout):
                 popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
                 popup_layout.open()
 
-    def validate_class_code(self, class_code):
-        response = requests.get(self.firebase_url)
-        print(response.text)  # Print the response for debugging
+    def fetch_class_data(self):        
+        firebase_url = "https://class-codes-10c3f-default-rtdb.firebaseio.com/"
+        response = requests.get(f"{firebase_url}/.json")
         if response.status_code == 200:
-            existing_data = response.json()
-            for class_name, code in existing_data.items():
-                if "code" in code and code["code"] == class_code:
-                    return class_name
-        return None
+            data = response.json()
+            for class_name, class_info in data.items():
+                if "code" in class_info:
+                    self.class_data[class_name] = class_info["code"]
+        
+    def validate_class_code(self, class_code_input):
+        self.fetch_class_data()
+        if class_code_input in self.class_data.values():
+            for class_name, class_code in self.class_data.items():
+                if class_code == class_code_input:
+                    return class_name 
 
 class ClassButton(Button):
     pass
 
 class Homepage(App):
-    
     def build(self):
         return MainScreen()
 
