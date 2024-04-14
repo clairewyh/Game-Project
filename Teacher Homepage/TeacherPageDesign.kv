@@ -1,35 +1,42 @@
-#:import Factory kivy.factory.Factory
+<MainScreen>:
+    orientation: "vertical"
+    padding: "10dp"
 
-<MyPopup@Popup>
-    auto_dismiss:True
-    size_hint:0.6,0.2
-    pos_hint: {"x":0.2, "top":1}
-    title: "Add Class"
-    BoxLayout:
-        orientation: "vertical"
-        TextInput:        
-            text: "Name your class: "
-            multiline: False
+    canvas.before:
+        Rectangle:
+            source: "C:/Users/clair/Downloads/bluegradient.jpg"
+            pos: self.pos
+            size: self.size
 
-<MainScreen>
-    FloatLayout:
-        orientation: "vertical"
-        size: root.width, root.height
-            
-        Button:
-            text: '+'
-            size_hint: None, None
-            size: "50dp", "50dp"
-            pos_hint: {"right":1, "top":1}
-            on_release: Factory.MyPopup().open()
-
-        Label:
-            text: "Classes"
-            font_size: 43
-            height: "50dp"
-            padding: "10dp", "10dp"
-            pos_hint: {"left":0, "top":1}
+    Button:
+        id: plus_button 
+        size_hint: None, None
+        size: "108dp", "90dp"
+        pos_hint: {"right": 1, "top": 1}
+        background_normal: r"C:\Users\clair\Downloads\plus.png"
+        background_down: r"C:\Users\clair\Downloads\plusPressed.png"
+        on_release: root.open_popup()
         
-    
+    Label:
+        text: "Classes"
+        font_size: 70
+        height: "50dp"
+        padding: "10dp"
+        pos_hint: {"left": 1, "top": 1}
+        bold: True
 
+    ScrollView:
+        size_hint_y: None
+        height: "400dp"
+        
+        BoxLayout:
+            id: classes_layout
+            orientation: "vertical"
+            size_hint_y: None
+            spacing: "10dp"
 
+<ClassButton>:
+    size_hint_y: None
+    height: "80dp"
+    background_color: 0, 1, 0.827, 1  # Pale green color
+    width: "200dp"
