@@ -5,8 +5,6 @@ from kivy.uix.textinput import TextInput
 from kivy.lang import Builder
 from kivy.uix.button import Button
 from random import randint
-import requests
-import json
 
 Builder.load_file("HomepageDesign.kv")
 
@@ -34,8 +32,9 @@ class MainScreen(BoxLayout):
             self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
 
-        # Send to Firebase
-        requests.patch(self.firebase_url, data = json.dumps(self.class_data))
+        #write to csv file
+        with open('class_data.csv', 'a') as file:  # 'a' to append to the file
+            file.write(f"{class_name},{code}\n")
                  
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
