@@ -6,6 +6,7 @@ from kivy.uix.textinput import TextInput
 from kivy.lang import Builder
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+import csv
 
 Builder.load_file("HomepageDesign.kv")
 
@@ -39,13 +40,14 @@ class MainScreen(BoxLayout):
                 popup_layout.open()
 
     def fetch_class_data(self):        
-        firebase_url = "https://class-codes-10c3f-default-rtdb.firebaseio.com/"
-        response = requests.get(f"{firebase_url}/.json")
-        if response.status_code == 200:
-            data = response.json()
-            for class_name, class_info in data.items():
-                if "code" in class_info:
-                    self.class_data[class_name] = class_info["code"]
+        # Clear existing class data
+        self.class_data.clear()
+        # Read class data from CSV file
+        with open('class_data.csv', 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                class_name, class_code = row
+                self.class_data[class_name] = class_code
         
     def validate_class_code(self, class_code_input):
         self.fetch_class_data()
