@@ -1,3 +1,5 @@
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label  # Import Label class
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.lang import Builder
@@ -69,6 +71,14 @@ class ExerciseScreen(Screen):
 
         with open("user_data.json", "w") as f:
             json.dump(data, f, indent=4)
+        
+        # Show popup after saving data
+        popup = Popup(title='Success',
+                      content=Label(text='Your changes are saved!'),
+                      size_hint=(None, None), size=(400, 200))
+        
+        # Show the popup
+        popup.open()
 
 
 class ExerciseInput(MDTextField):
@@ -94,3 +104,4 @@ class FitnessApp(MDApp):
 
 if __name__ == '__main__':
     FitnessApp().run()
+
