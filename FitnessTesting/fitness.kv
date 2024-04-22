@@ -1,0 +1,60 @@
+<HomeScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '10dp'
+        padding: '10dp'
+        MDLabel:
+            text: 'Select Round'
+            halign: 'center'
+            font_style: 'H6'
+        MDRaisedButton:
+            text: 'Round 1'
+            on_release: app.on_round_click(1)
+        MDRaisedButton:
+            text: 'Round 2'
+            on_release: app.on_round_click(2)
+        MDRaisedButton:
+            text: 'Round 3'
+            on_release: app.on_round_click(3)
+        MDRaisedButton:
+            text: 'Round 4'
+            on_release: app.on_round_click(4)
+        MDRaisedButton:
+            text: 'Round 5'
+            on_release: app.on_round_click(5)
+
+<ExerciseScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '10dp'
+        padding: '10dp'
+
+        ScrollView:
+            GridLayout:
+                id: exercise_inputs
+                cols: 3
+                spacing: '10dp'
+                padding: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+        
+        MDRaisedButton:
+            text: 'Save Changes'
+            on_release: root.save_data()
+            size_hint_y: None
+            height: "48dp"
+
+
+<ExerciseLabel>:
+    MDLabel:
+        text: root.text
+        halign: 'center'
+        font_style: 'Subtitle2'
+
+<ExerciseInput>:
+    MDTextField:
+        hint_text: root.hint_text
+        mode: 'fill'
+        helper_text_mode: 'on_focus'
+        required: True
+        helper_text: 'Enter value'
