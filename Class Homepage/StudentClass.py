@@ -13,13 +13,16 @@ Builder.load_file("HomepageDesign.kv")
 
 class MainScreen(BoxLayout):
     class_data = {}
-
+    
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
         self.class_code_input = TextInput(hint_text="Enter class code", multiline=False, size_hint_y=None, height="40dp")
+        self.student_name_input = TextInput(hint_text="Enter your name", multiline=False, size_hint_y=None, height="40dp")
+        
         # Listen for key press event in TextInput
         self.class_code_input.bind(on_text_validate=self.join_class)
         popup_layout.add_widget(self.class_code_input)
+        popup_layout.add_widget(self.student_name_input)
         # Set background color for the "Join Class" button
         join_class_button = Button(text="Join Class", on_press=self.join_class, background_color=(0.2, 0.6, 1, 1))
         popup_layout.add_widget(join_class_button)
@@ -28,22 +31,34 @@ class MainScreen(BoxLayout):
 
     def join_class(self, instance):
         class_code = self.class_code_input.text
-        if class_code:
+        student_name = self.student_name_input.text
+        if class_code and student_name:
             class_name = self.validate_class_code(class_code)
             if class_name:
                 class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
                 self.ids.classes_layout.add_widget(class_button)
+                self.add_student_to_class_list(class_code, student_name)
             else:
                 # Show error message if class code is not valid
                 error_label = Label(text="Invalid class code. Please try again.", color=(1, 0, 0, 1))
                 popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
                 popup_layout.open()
-
+        else:
+            # Show error message if class code or student name is empty
+            error_label = Label(text="Please enter class code and your name.", color=(1, 0, 0, 1))
+            popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
+            popup_layout.open()
+            
+    def add_student_to_class_list(self, class_code, student_name):
+        with open('class_list.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([class_code, student_name])
+      
     def fetch_class_data(self):        
         # Clear existing class data
         self.class_data.clear()
         # Read class data from CSV file
-        with open('class_data.csv', 'r') as file:
+        with open('classes_data.csv', 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 class_name, class_code = row
