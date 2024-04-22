@@ -43,6 +43,16 @@
             on_release: root.save_data()
             size_hint_y: None
             height: "48dp"
+        
+        MDIconButton:
+            icon: "arrow-left"
+            on_release: app.root.current = "home"  # Navigate back to home screen
+            theme_text_color: "Custom"
+            text_color: app.theme_cls.primary_color  # Set text color to primary color
+            size_hint: None, None
+            size: "48dp", "48dp"
+            pos_hint: {"x": 0, "top": 1}  # Position in the top-left corner
+
 
 
 <ExerciseLabel>:
