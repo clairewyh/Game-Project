@@ -33,7 +33,7 @@ class ExerciseScreen(Screen):
             "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
             "plank hold", "vertical jump or broad jump", "sit and reach", "20-yard dash",
             "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
-            "battle rope feed", "30s jump test", "70% bodyweight pull-up"
+            "battle rope feed", "30s jump test", "70 percent bodyweight pull-up"
         ]
 
         for exercise in exercises:
@@ -57,7 +57,7 @@ class ExerciseScreen(Screen):
 
     def load_saved_data(self):
         try:
-            with open("user_data.json", "r") as f:
+            with open("fitness_data.json", "r") as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
@@ -81,7 +81,7 @@ class ExerciseScreen(Screen):
             }
 
         # Save exercise data to the JSON file
-        with open("user_data.json", "w") as f:
+        with open("fitness_data.json", "w") as f:
             json.dump(self.exercise_data, f, indent=4)
 
         # Show popup after saving data
