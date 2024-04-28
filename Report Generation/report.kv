@@ -1,1 +1,32 @@
+<ReportGeneration>:
+    orientation: "vertical"
+    canvas.before:
+        Color:
+            rgba: 0, 0.5, 1, 0.8
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        text: "Fitness Test Improvement (%)"
+        size_hint_y: None
+        height: "40dp"
+    ScrollView:
+        GridLayout:
+            id: table
+            cols: 2
+            padding: "20dp"
+            spacing: "10dp"
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Line:
+                    points: [self.width/2, 0, self.width/2, self.height]
 
+<ReportLabel@Label>:
+    size_hint_y: None
+    height: "30dp"
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 1
+        Line:
+            points: [self.width, 0, self.width, self.height]
