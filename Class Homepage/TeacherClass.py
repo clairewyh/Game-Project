@@ -2,15 +2,14 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
-from kivy.lang import Builder
+from kivy.lang import Builder 
 from kivy.uix.button import Button
 from random import randint
 
 Builder.load_file("HomepageDesign.kv")
 
 class MainScreen(BoxLayout):
-    class_data = {}
-    firebase_url = "https://class-codes-10c3f-default-rtdb.firebaseio.com/.json"
+    class_data = {}  
 
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
@@ -25,21 +24,22 @@ class MainScreen(BoxLayout):
         popup.open()
  
     def add_class(self, instance):
+        
         class_name = self.class_name_input.text
         if class_name:
             code = self.generate_unique_code()
             class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
             self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
-
+        
         #write to csv file
         with open('class_data.csv', 'a') as file:  # 'a' to append to the file
             file.write(f"{class_name},{code}\n")
-                 
+   
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
         return code
-
+    
 
 class ClassButton(Button):
     pass
@@ -48,5 +48,5 @@ class Homepage(App):
     def build(self):
         return MainScreen()
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     Homepage().run()
