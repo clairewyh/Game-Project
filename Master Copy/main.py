@@ -9,19 +9,19 @@ from kivy.uix.button import Button
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.textinput import TextInput
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.event import EventDispatcher
 
-Builder.load_file('startinghomepage.kv')
-Builder.load_file('loginpage.kv')
-Builder.load_file('homepagedesign.kv')
+Builder.load_file('main.kv')
 
-class Homepage(BoxLayout):
+class StartingHomepage(BoxLayout):
     pass
 
 class UserButton(Button):
     pass
 
 class ClassButton(Button):
-    pass
+    class_code = ''
 
 class LogPage(BoxLayout):
     def __init__(self, **kwargs):
@@ -81,7 +81,11 @@ class ClassPage(BoxLayout):
     pass
 
 class TeacherClassPage(ClassPage):
-    class_data = {}  
+    class_data = {}
+
+    def __init__(self, **kwargs):
+        super(TeacherClassPage, self).__init__(**kwargs)
+        self.register_event_type('on_class_selected')
 
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
@@ -94,23 +98,31 @@ class TeacherClassPage(ClassPage):
         popup_layout.add_widget(add_class_button)
         popup = Popup(title="New Class", content=popup_layout, size_hint=(None, None), size=("300dp", "200dp"))
         popup.open()
- 
+
     def add_class(self, instance):
-        
         class_name = self.class_name_input.text
         if class_name:
             code = self.generate_unique_code()
             class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
+            class_button.class_code = code  # Setting custom property
+            class_button.bind(on_release=self.on_class_button_pressed)  # Call on_class_button_pressed here
             self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
-        
-        #write to csv file
-        with open('class_data.csv', 'a') as file:  # 'a' to append to the file
-            file.write(f"{class_name},{code}\n")
-   
+
+            #write to csv file
+            with open('class_data.csv', 'a') as file:  # 'a' to append to the file
+                file.write(f"{class_name},{code}\n")
+
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
         return code
+
+    def on_class_button_pressed(self, instance):
+        self.dispatch('on_class_selected', instance.class_code)
+
+    def on_class_selected(self, class_code):
+        App.get_running_app().switch_to_classlist_page(class_code)
+
 
 class StudentClassPage(ClassPage):
     class_data = {}
@@ -174,10 +186,29 @@ class StudentClassPage(ClassPage):
             for class_name, class_code in self.class_data.items():
                 if class_code == class_code_input:
                     return class_name 
+                
+class ClassListPage(BoxLayout):
+    def __init__(self, class_code, **kwargs):
+        super().__init__(**kwargs)
+        self.class_code = class_code
+        self.load_students()
+  
+    def load_students(self):
+        try:
+            with open('class_list.csv', newline='') as csvfile:
+                reader = csv.reader(csvfile)
+                students = [row[1] for row in reader if row[0] == self.class_code] 
+                if students:
+                    for student in students:
+                        self.ids.students.add_widget(Label(text=student, font_size=30, bold=True))
+                else:
+                    self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
+        except FileNotFoundError:
+            self.ids.students.add_widget(Label(text="File not found: class_list.csv", font_size=30, bold=True))
 
 class FitnessApp(App):
     def build(self):
-        self.homepage = Homepage()
+        self.startinghomepage = StartingHomepage()
         self.loginpage = LogPage()
         
         # Initialize user database
@@ -187,21 +218,23 @@ class FitnessApp(App):
         except FileNotFoundError:
             self.loginpage.user_database = {}
 
-        return self.homepage
+        self.teacher_classpage = TeacherClassPage()
+        self.class_list = ClassListPage(class_code="")
+
+        return self.startinghomepage
 
     def switch_to_login(self):
-        self.homepage.clear_widgets()
-        self.homepage.add_widget(self.loginpage)
+        self.startinghomepage.clear_widgets()
+        self.startinghomepage.add_widget(self.loginpage)
 
     def switch_to_teacher_classpage(self):
         self.root.clear_widgets()  # Clear all widgets
-        teacher_classpage = TeacherClassPage()  # Initialize the TeacherClassPage
-        self.root.add_widget(teacher_classpage)
+        self.root.add_widget(self.teacher_classpage)
 
-    def switch_to_student_classpage(self):
+    def switch_to_classlist_page(self, class_code):
         self.root.clear_widgets()  # Clear all widgets
-        student_classpage = StudentClassPage()
-        self.root.add_widget(student_classpage)
+        self.class_list = ClassListPage(class_code=class_code)
+        self.root.add_widget(self.class_list)
 
 
 if __name__ == '__main__':
