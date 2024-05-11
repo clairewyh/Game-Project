@@ -1,0 +1,141 @@
+<StartingHomepage>:
+    orientation: 'vertical'
+    padding: '2.04cm'
+    
+    Image:
+        source: "appicon.png"
+        size_hint_y: None
+        height: "5cm"
+
+    Label:
+        markup: True
+        text: '[b]Jumpa-roo[/b]'
+        font_size: '1.05833cm'
+
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: '150dp'  # Adjust height as needed
+        spacing: '10dp'
+
+        UserButton:
+            text: "Teacher"
+            font_size: '20sp'
+            background_color: (0, 0.5, 1, 0.8)
+            on_release: app.switch_to_login()
+
+        UserButton:
+            text: "Student"
+            font_size: '20sp'
+            background_color: (0, 0.5, 1, 0.8)
+            on_release: app.switch_to_login()
+
+<LogPage>:
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.2
+        Label:
+            markup: True
+            text: '[b]Welcome to the Login Page[/b]'
+            font_size: '0.7cm'
+
+    Label:
+        text: 'Username:'
+        size_hint_y: 0.1
+    TextInput:
+        multiline: False
+        size_hint_y: 0.1
+        id: username_input
+
+    Label:
+        text: 'Password:'
+        size_hint_y: 0.1
+    TextInput:
+        multiline: False
+        password: True
+        size_hint_y: 0.1
+        id: password_input
+
+    Button:
+        text: 'Login'
+        size_hint_y: 0.1
+        background_color: 0.2, 0.8, 1, 1
+        background_normal: ''
+        on_press: root.login()
+
+    Button:
+        text: 'Sign Up'
+        size_hint_y: 0.1
+        background_color: 0.2, 0.8, 1, 1
+        background_normal: ''
+        on_press: root.signup()
+
+<ClassPage>:
+    orientation: "vertical"
+    padding: "10dp"
+
+    canvas.before:
+        Rectangle:
+            source: "bluegradient.png"
+            pos: self.pos
+            size: self.size
+
+    Button:
+        id: plus_button 
+        size_hint: None, None
+        size: "108dp", "90dp"
+        pos_hint: {"right": 1, "top": 1}
+        background_normal: r"plus.png"
+        background_down: r"plusPressed.png"
+        on_release: root.open_popup()
+        
+    Label:
+        text: "Classes"
+        font_size: 70
+        height: "50dp"
+        padding: "10dp"
+        pos_hint: {"left": 1, "top": 1}
+        bold: True
+
+    ScrollView:
+        size_hint_y: None
+        height: "400dp"
+        
+        BoxLayout:
+            id: classes_layout
+            orientation: "vertical"
+            size_hint_y: None
+            spacing: "10dp"
+
+<ClassButton>:
+    size_hint_y: None
+    height: "80dp"
+    background_color: 0, 1, 0.827, 1  # Pale green color
+    width: "200dp"
+
+<ClassListPage>:
+    orientation: "vertical"
+    padding: 10
+    name: 'class_list'
+
+    canvas.before:
+        Rectangle:
+            source: "bluegradient.png"
+            pos: self.pos
+            size: self.size
+    
+    Label:
+        text: "Class List"
+        font_size: 70
+        pos_hint: {"left": 1, "top": 1}
+        height: "100dp"
+        bold: True
+
+    ScrollView:
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: self.minimum_height
+            spacing: "50dp"
+            padding: "30dp"
+            id: students
