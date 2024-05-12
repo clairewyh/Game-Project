@@ -86,6 +86,21 @@ class TeacherClassPage(ClassPage):
     def __init__(self, **kwargs):
         super(TeacherClassPage, self).__init__(**kwargs)
         self.register_event_type('on_class_selected')
+        self.load_class_data()
+
+    def load_class_data(self):
+        try:
+            with open('class_data.csv', 'r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    if len(row) == 2:  # Ensure there are exactly two values in the row
+                        class_name, class_code = row
+                        self.class_data[class_name] = class_code
+                    else:
+                        print(f"Ignoring row: {row}. Expected 2 values, found {len(row)}")
+        except FileNotFoundError:
+            pass  # Ignore if the file doesn't exist
+
 
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
@@ -109,7 +124,7 @@ class TeacherClassPage(ClassPage):
             self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
 
-            #write to csv file
+            # Write to csv file
             with open('class_data.csv', 'a') as file:  # 'a' to append to the file
                 file.write(f"{class_name},{code}\n")
 
@@ -122,7 +137,6 @@ class TeacherClassPage(ClassPage):
 
     def on_class_selected(self, class_code):
         App.get_running_app().switch_to_classlist_page(class_code)
-
 
 class StudentClassPage(ClassPage):
     class_data = {}
@@ -200,7 +214,8 @@ class ClassListPage(BoxLayout):
                 students = [row[1] for row in reader if row[0] == self.class_code] 
                 if students:
                     for student in students:
-                        self.ids.students.add_widget(Label(text=student, font_size=30, bold=True))
+                        student_button = Button(text=student, font_size=30, bold=True, size_hint_y=None, height="50dp")
+                        self.ids.students.add_widget(student_button)
                 else:
                     self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
         except FileNotFoundError:
