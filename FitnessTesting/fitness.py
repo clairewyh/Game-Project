@@ -1,10 +1,12 @@
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
-from kivymd.app import MDApp
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.lang import Builder
-from kivymd.uix.textfield import MDTextField
 import json
+from kivy.app import App
+
 
 # Define the screen manager
 sm = ScreenManager()
@@ -33,7 +35,7 @@ class ExerciseScreen(Screen):
             "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
             "plank hold", "vertical jump or broad jump", "sit and reach", "20-yard dash",
             "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
-            "battle rope feed", "30s jump test", "70 percent bodyweight pull-up"
+            "battle rope feed", "30s jump test"
         ]
 
         for exercise in exercises:
@@ -92,17 +94,16 @@ class ExerciseScreen(Screen):
         popup.open()
 
 
-class ExerciseInput(MDTextField):
+class ExerciseInput(TextInput):
     pass
 
 
-class ExerciseLabel(MDTextField):
+class ExerciseLabel(Label):
     pass
 
 
-class FitnessApp(MDApp):
+class FitnessApp(App):
     def build(self):
-        self.theme_cls.primary_palette = "Blue"
         Builder.load_file('fitness.kv')
         sm.add_widget(HomeScreen(name='home'))
         sm.add_widget(ExerciseScreen(name='exercise'))
