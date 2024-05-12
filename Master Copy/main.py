@@ -208,8 +208,9 @@ class StudentClassPage(ClassPage):
         self.add_widget(student_homepage) 
 
 class StudentHomepage(BoxLayout):
-# Prompts the user to set 3 goals for themselves
+    # Prompts the user to set 3 goals for themselves
     def goal_setting(self):
+        name = self.ids.name_input.text
         goal1 = self.ids.first_goal.text
         goal2 = self.ids.second_goal.text
         goal3 = self.ids.third_goal.text
@@ -221,12 +222,16 @@ class StudentHomepage(BoxLayout):
 
         # Stores goals in database once 3 goals are inputted
         goals = {
-            'Goal 1: ': goal1,
-            'Goal 2: ': goal2,
-            'Goal 3: ': goal3 
+            'Name': name,
+            'Goals': {
+                'Goal 1': goal1,
+                'Goal 2': goal2,
+                'Goal 3': goal3
+            }
         }
 
-        with open('goal_database.json', 'w') as f:
+        with open('goal_database.json', 'a') as f:
+            f.write('\n')  # add newline
             json.dump(goals, f)
         
         self.show_popup('Success', 'Goals saved successfully.')
