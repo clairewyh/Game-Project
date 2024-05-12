@@ -3,23 +3,23 @@
         orientation: 'vertical'
         spacing: '10dp'
         padding: '10dp'
-        MDLabel:
+        Label:
             text: 'Select Round'
             halign: 'center'
-            font_style: 'H6'
-        MDRaisedButton:
+            font_size: '20sp'
+        Button:
             text: 'Round 1'
             on_release: app.on_round_click(1)
-        MDRaisedButton:
+        Button:
             text: 'Round 2'
             on_release: app.on_round_click(2)
-        MDRaisedButton:
+        Button:
             text: 'Round 3'
             on_release: app.on_round_click(3)
-        MDRaisedButton:
+        Button:
             text: 'Round 4'
             on_release: app.on_round_click(4)
-        MDRaisedButton:
+        Button:
             text: 'Round 5'
             on_release: app.on_round_click(5)
 
@@ -34,37 +34,71 @@
                 id: exercise_inputs
                 cols: 3
                 spacing: '10dp'
-                padding: '10dp'
+                padding: ('10dp', '10dp', '10dp', '20dp')  # Add bottom padding
                 size_hint_y: None
                 height: self.minimum_height
+                row_default_height: '40dp'
+                row_force_default: True
+                col_default_width: '200dp'  # Set a default width for label column
         
-        MDRaisedButton:
+        Button:
             text: 'Save Changes'
             on_release: root.save_data()
             size_hint_y: None
             height: "48dp"
         
-        MDIconButton:
-            icon: "arrow-left"
+        Button:
+            text: "Back"
             on_release: app.root.current = "home"  # Navigate back to home screen
-            theme_text_color: "Custom"
-            text_color: app.theme_cls.primary_color  # Set text color to primary color
+            size_hint_y: None
+            height: "48dp"
             size_hint: None, None
-            size: "48dp", "48dp"
+            size: "100dp", "48dp"
             pos_hint: {"x": 0, "top": 1}  # Position in the top-left corner
 
+<ExerciseLabel>:
+    Label:
+        text: root.text
+        halign: 'center'
+        font_size: '16sp'
+        size_hint_x: None
+        width: self.texture_size[0] + dp(16)  # Set width based on text size with some padding
+
+<ExerciseInput>:
+    TextInput:
+        hint_text: root.hint_text
+        multiline: False
+        font_size: '16sp'
+        size_hint_x: 0.3
+        padding: '10dp'
 
 
 <ExerciseLabel>:
-    MDLabel:
+    Label:
         text: root.text
         halign: 'center'
-        font_style: 'Subtitle2'
+        font_size: '16sp'
 
 <ExerciseInput>:
-    MDTextField:
+    TextInput:
         hint_text: root.hint_text
-        mode: 'fill'
-        helper_text_mode: 'on_focus'
-        required: True
-        helper_text: 'Enter value'
+        multiline: False
+        font_size: '16sp'
+        size_hint_x: 0.3
+        padding: '10dp'
+
+
+<ExerciseLabel>:
+    Label:
+        text: root.text
+        halign: 'center'
+        font_size: '16sp'
+
+<ExerciseInput>:
+    TextInput:
+        hint_text: root.hint_text
+        multiline: False
+        font_size: '16sp'
+        size_hint_y: None
+        height: "48dp"
+        padding: '10dp'
