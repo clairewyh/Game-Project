@@ -168,6 +168,7 @@ class StudentClassPage(ClassPage):
                 class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
                 self.ids.classes_layout.add_widget(class_button)
                 self.add_student_to_class_list(class_code, student_name)
+                self.switch_to_student_homepage()
             else:
                 # Show error message if class code is not valid
                 error_label = Label(text="Invalid class code. Please try again.", color=(1, 0, 0, 1))
@@ -200,6 +201,42 @@ class StudentClassPage(ClassPage):
             for class_name, class_code in self.class_data.items():
                 if class_code == class_code_input:
                     return class_name 
+    
+    def switch_to_student_homepage(self):  # Added this method
+        self.clear_widgets()
+        student_homepage = StudentHomepage()
+        self.add_widget(student_homepage) 
+
+class StudentHomepage(BoxLayout):
+# Prompts the user to set 3 goals for themselves
+    def goal_setting(self):
+        goal1 = self.ids.first_goal.text
+        goal2 = self.ids.second_goal.text
+        goal3 = self.ids.third_goal.text
+        
+        # If not all 3 goals are inputted, popup error will display
+        if goal1 == '' or goal2 == '' or goal3 == '':
+            self.show_popup('Error', 'Please enter three goals.')
+            return
+
+        # Stores goals in database once 3 goals are inputted
+        goals = {
+            'Goal 1: ': goal1,
+            'Goal 2: ': goal2,
+            'Goal 3: ': goal3 
+        }
+
+        with open('goal_database.json', 'w') as f:
+            json.dump(goals, f)
+        
+        self.show_popup('Success', 'Goals saved successfully.')
+    
+    # Popup display
+    def show_popup(self, title, message):
+        popup = Popup(title=title,
+                      content=Label(text=message),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()  
                 
 class ClassListPage(BoxLayout):
     def __init__(self, class_code, **kwargs):
@@ -249,7 +286,7 @@ class FitnessApp(App):
     def switch_to_student_classpage(self):
         self.root.clear_widgets()  # Clear all widgets
         self.student_classpage = StudentClassPage()
-        self.root.add_widget(self.student_classpage)
+        self.root.add_widget(self.student_classpage) 
 
     def switch_to_classlist_page(self, class_code):
         self.root.clear_widgets()  # Clear all widgets
