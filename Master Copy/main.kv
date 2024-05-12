@@ -76,7 +76,7 @@
 
     canvas.before:
         Rectangle:
-            source: "bluegradient.jpg"
+            source: "bluegradient.png"
             pos: self.pos
             size: self.size
 
@@ -120,7 +120,7 @@
 
     canvas.before:
         Rectangle:
-            source: "bluegradient.jpg"
+            source: "bluegradient.png"
             pos: self.pos
             size: self.size
 
@@ -150,43 +150,35 @@
             text:'[b]Class Name[/b]'
             font_size: '1cm'
     
-    Button:
-        text: 'Set some goals for yourself!'
-        size_hint_y: 0.1
-        background_color: 0, 0.5, 1, 0.8
-        background_normal: ''
-        bold: True
-    
     Label:
-        text: 'Goal 1:'
+        text: 'Enter your name:'
         size_hint_y: 0.1
         bold: True
     TextInput:
+        id: name_input
         multiline: False
         size_hint_y: 0.1
+
+    Label:
+        text: 'Enter your goals:'
+        size_hint_y: 0.1
+        bold: True
+    TextInput:
         id: first_goal
-
-    Label:
-        text: 'Goal 2:'
-        size_hint_y: 0.1
-        bold: True
-    TextInput:
         multiline: False
         size_hint_y: 0.1
+    TextInput:
         id: second_goal
-    
-    Label:
-        text: 'Goal 3:'
-        size_hint_y: 0.1
-        bold: True
-    TextInput:
         multiline: False
         size_hint_y: 0.1
+    TextInput:
         id: third_goal
+        multiline: False
+        size_hint_y: 0.1
 
     Button:
-        text: 'Click here to save goals'
-        size_hint_y: 0.2
+        text: 'Set Goals'
+        size_hint_y: 0.1
         background_color: 0.2, 0.8, 1, 1
         background_normal: ''
         bold: True
