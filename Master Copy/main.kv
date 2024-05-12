@@ -76,7 +76,7 @@
 
     canvas.before:
         Rectangle:
-            source: "bluegradient.png"
+            source: "bluegradient.jpg"
             pos: self.pos
             size: self.size
 
@@ -85,8 +85,8 @@
         size_hint: None, None
         size: "108dp", "90dp"
         pos_hint: {"right": 1, "top": 1}
-        background_normal: r"plus.png"
-        background_down: r"plusPressed.png"
+        background_normal: "plus.png"
+        background_down: "plusPressed.png"
         on_release: root.open_popup()
         
     Label:
@@ -120,10 +120,11 @@
 
     canvas.before:
         Rectangle:
-            source: "bluegradient.png"
+            source: "bluegradient.jpg"
             pos: self.pos
             size: self.size
-    
+
+      
     Label:
         text: "Class List"
         font_size: 70
@@ -139,3 +140,61 @@
             spacing: "50dp"
             padding: "30dp"
             id: students
+
+<StudentHomepage>:
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.2
+        Label:
+            markup: True
+            text:'[b]Class Name[/b]'
+            font_size: '1cm'
+    
+    Button:
+        text: 'Set some goals for yourself!'
+        size_hint_y: 0.1
+        background_color: 0, 0.5, 1, 0.8
+        background_normal: ''
+        bold: True
+    
+    Label:
+        text: 'Goal 1:'
+        size_hint_y: 0.1
+        bold: True
+    TextInput:
+        multiline: False
+        size_hint_y: 0.1
+        id: first_goal
+
+    Label:
+        text: 'Goal 2:'
+        size_hint_y: 0.1
+        bold: True
+    TextInput:
+        multiline: False
+        size_hint_y: 0.1
+        id: second_goal
+    
+    Label:
+        text: 'Goal 3:'
+        size_hint_y: 0.1
+        bold: True
+    TextInput:
+        multiline: False
+        size_hint_y: 0.1
+        id: third_goal
+
+    Button:
+        text: 'Click here to save goals'
+        size_hint_y: 0.2
+        background_color: 0.2, 0.8, 1, 1
+        background_normal: ''
+        bold: True
+        on_press: root.goal_setting()
+
+    Button:
+        text: 'Click here to go to the Fitness Testing Page'
+        size_hint_y: 0.3
+        background_color: 0, 0.5, 1, 0.8
+        background_normal: ''
+        bold: True
