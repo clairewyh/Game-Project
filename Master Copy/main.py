@@ -246,6 +246,11 @@ class FitnessApp(App):
         self.root.clear_widgets()  # Clear all widgets
         self.root.add_widget(self.teacher_classpage)
 
+    def switch_to_student_classpage(self):
+        self.root.clear_widgets()  # Clear all widgets
+        self.student_classpage = StudentClassPage()
+        self.root.add_widget(self.student_classpage)
+
     def switch_to_classlist_page(self, class_code):
         self.root.clear_widgets()  # Clear all widgets
         self.class_list = ClassListPage(class_code=class_code)
