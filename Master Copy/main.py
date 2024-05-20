@@ -11,6 +11,7 @@ from kivy.core.window import Window
 from kivy.uix.textinput import TextInput
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.event import EventDispatcher
+import os
 
 Builder.load_file('main.kv')
 
@@ -205,50 +206,14 @@ class StudentClassPage(ClassPage):
     def switch_to_student_homepage(self):  # Added this method
         self.clear_widgets()
         student_homepage = StudentHomepage()
-        self.add_widget(student_homepage) 
+        self.add_widget(student_homepage)
 
-class StudentHomepage(BoxLayout):
-    # Prompts the user to set 3 goals for themselves
-    def goal_setting(self):
-        name = self.ids.name_input.text
-        goal1 = self.ids.first_goal.text
-        goal2 = self.ids.second_goal.text
-        goal3 = self.ids.third_goal.text
-        
-        # If not all 3 goals are inputted, popup error will display
-        if goal1 == '' or goal2 == '' or goal3 == '':
-            self.show_popup('Error', 'Please enter three goals.')
-            return
-
-        # Stores goals in database once 3 goals are inputted
-        goals = {
-            'Name': name,
-            'Goals': {
-                'Goal 1': goal1,
-                'Goal 2': goal2,
-                'Goal 3': goal3
-            }
-        }
-
-        with open('goal_database.json', 'a') as f:
-            f.write('\n')  # add newline
-            json.dump(goals, f)
-        
-        self.show_popup('Success', 'Goals saved successfully.')
-    
-    # Popup display
-    def show_popup(self, title, message):
-        popup = Popup(title=title,
-                      content=Label(text=message),
-                      size_hint=(None, None), size=(400, 200))
-        popup.open()  
-                
 class ClassListPage(BoxLayout):
     def __init__(self, class_code, **kwargs):
         super().__init__(**kwargs)
         self.class_code = class_code
         self.load_students()
-  
+
     def load_students(self):
         try:
             with open('class_list.csv', newline='') as csvfile:
@@ -257,11 +222,100 @@ class ClassListPage(BoxLayout):
                 if students:
                     for student in students:
                         student_button = Button(text=student, font_size=30, bold=True, size_hint_y=None, height="50dp")
+                        student_button.bind(on_release=lambda instance, student_name=student: self.on_student_button_pressed(student_name))  # Pass student_name to the method
                         self.ids.students.add_widget(student_button)
                 else:
                     self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
         except FileNotFoundError:
             self.ids.students.add_widget(Label(text="File not found: class_list.csv", font_size=30, bold=True))
+
+    def on_student_button_pressed(self, student_name):
+        # Navigate to TeacherGoalpage and pass the student_name
+        App.get_running_app().switch_to_teacher_goalpage(student_name)
+
+class TeacherGoalpage(BoxLayout):
+    def __init__(self, student_name, **kwargs):
+        super().__init__(**kwargs)
+        self.student_name = student_name
+        self.load_goals()
+
+    # Load goals from JSON file and display them
+    def load_goals(self):
+        try:
+            with open('goal_database.json', 'r') as f:
+                goals_list = json.load(f)
+                print("Loaded goals list:", goals_list)  # Debugging: Print the loaded goals list
+        except (FileNotFoundError, json.JSONDecodeError):
+            goals_list = []
+
+        # Clear existing labels if any
+        self.ids.goals_box.clear_widgets()
+
+        # Find goals for the selected student
+        student_goals = None
+        for student_data in goals_list:
+            name = student_data.get('Name', 'Unknown')
+            if name == self.student_name:
+                student_goals = student_data.get('Goals', {})
+                break
+
+        # Display the student's goals if found
+        if student_goals:
+            for key, value in student_goals.items():
+                goal_label = Label(text=f'{self.student_name} - {key}: {value}')
+                self.ids.goals_box.add_widget(goal_label)
+        else:
+            error_label = Label(text=f'No goals found for {self.student_name}.', color=(1, 0, 0, 1))
+            self.ids.goals_box.add_widget(error_label)
+
+class StudentHomepage(BoxLayout):
+    def goal_setting(self):
+        name = self.ids.name_input.text
+        goal1 = self.ids.first_goal.text
+        goal2 = self.ids.second_goal.text
+        goal3 = self.ids.third_goal.text
+
+        # If not all 3 goals are inputted, popup error will display
+        if goal1 == '' or goal2 == '' or goal3 == '':
+            self.show_popup('Error', 'Please enter three goals.')
+            return
+
+        # Stores goals in dictionary
+        new_goal = {
+            'Name': name,
+            'Goals': {
+                'Goal 1': goal1,
+                'Goal 2': goal2,
+                'Goal 3': goal3
+            }
+        }
+
+        # Load existing goals from the file
+        goal_database_path = 'goal_database.json'
+        if os.path.exists(goal_database_path):
+            with open(goal_database_path, 'r') as f:
+                try:
+                    goals_list = json.load(f)
+                except json.JSONDecodeError:
+                    goals_list = []
+        else:
+            goals_list = []
+
+        # Append the new goal to the list
+        goals_list.append(new_goal)
+
+        # Write the updated list back to the file
+        with open(goal_database_path, 'w') as f:
+            json.dump(goals_list, f, indent=4)
+
+        self.show_popup('Success', 'Goals saved successfully.')
+    
+    # Popup display
+    def show_popup(self, title, message):
+        popup = Popup(title=title,
+                      content=Label(text=message),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()
 
 class FitnessApp(App):
     def build(self):
@@ -298,6 +352,10 @@ class FitnessApp(App):
         self.class_list = ClassListPage(class_code=class_code)
         self.root.add_widget(self.class_list)
 
+    def switch_to_teacher_goalpage(self, student_name):
+        self.root.clear_widgets()  # Clear all widgets
+        self.teacher_goalpage = TeacherGoalpage(student_name=student_name)  # Pass student_name to the TeacherGoalpage
+        self.root.add_widget(self.teacher_goalpage)
 
 if __name__ == '__main__':
     Window.size=(397,697)
