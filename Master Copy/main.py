@@ -9,11 +9,16 @@ from kivy.uix.button import Button
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.textinput import TextInput
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.event import EventDispatcher
 import os
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
 
 Builder.load_file('main.kv')
+cred = credentials.Certificate("/Users/celina/Downloads/projectmanagement-27c6b-firebase-adminsdk-z87rb-8af201d7bc.json")
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://projectmanagement-27c6b-default-rtdb.firebaseio.com/'
+})
 
 class StartingHomepage(BoxLayout):
     pass
@@ -32,40 +37,41 @@ class LogPage(BoxLayout):
     def login(self):
         username = self.ids.username_input.text
         password = self.ids.password_input.text
-        
+
         if username == '' or password == '':
             self.show_popup('Error', 'Please enter both username and password.')
             return
-        
+
         # Check login credentials
         if self.check_credentials(username, password):
             self.show_popup('Success', 'Login successful!')
             self.switch_to_class_homepage(username)
         else:
             self.show_popup('Error', 'Invalid username or password.')
-    
+
     def check_credentials(self, username, password):
         # Check credentials
-        if username in self.user_database and self.user_database[username] == password:
+        users_ref = db.reference('users')
+        user_data = users_ref.child(username).get()
+
+        if user_data is not None and user_data == password:
             return True
         return False
-    
+
     def signup(self):
         username = self.ids.username_input.text
         password = self.ids.password_input.text
-        
+
         if username == '' or password == '':
             self.show_popup('Error', 'Please enter both username and password.')
             return
-        
-        # Add new user to database
-        self.user_database[username] = password
+
+        # Add new user to Firebase Realtime Database
+        users_ref = db.reference('users')
+        users_ref.child(username).set(password)
+
         self.show_popup('Success', 'Sign up successful!')
-        
-        # Save user database to file
-        with open('user_database.json', 'w') as f:
-            json.dump(self.user_database, f)
-    
+
     def show_popup(self, title, message):
         popup = Popup(title=title,
                       content=Label(text=message),
@@ -90,18 +96,10 @@ class TeacherClassPage(ClassPage):
         self.load_class_data()
 
     def load_class_data(self):
-        try:
-            with open('class_data.csv', 'r') as file:
-                reader = csv.reader(file)
-                for row in reader:
-                    if len(row) == 2:  # Ensure there are exactly two values in the row
-                        class_name, class_code = row
-                        self.class_data[class_name] = class_code
-                    else:
-                        print(f"Ignoring row: {row}. Expected 2 values, found {len(row)}")
-        except FileNotFoundError:
-            pass  # Ignore if the file doesn't exist
-
+        class_data_ref = db.reference('class_data')
+        self.class_data = class_data_ref.get()
+        if not self.class_data:
+            self.class_data = {}
 
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
@@ -125,9 +123,9 @@ class TeacherClassPage(ClassPage):
             self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
 
-            # Write to csv file
-            with open('class_data.csv', 'a') as file:  # 'a' to append to the file
-                file.write(f"{class_name},{code}\n")
+            # Write to Firebase Realtime Database
+            class_data_ref = db.reference('class_data')
+            class_data_ref.set(self.class_data)
 
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
