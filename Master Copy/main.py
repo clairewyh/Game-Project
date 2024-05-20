@@ -45,9 +45,26 @@ class LogPage(BoxLayout):
         # Check login credentials
         if self.check_credentials(username, password):
             self.show_popup('Success', 'Login successful!')
+            self.load_user_classes(username)  # Load classes for the user
             self.switch_to_class_homepage(username)
         else:
             self.show_popup('Error', 'Invalid username or password.')
+    
+    def load_user_classes(self, username):
+        classes_ref = db.reference('user_classes')
+        user_classes = classes_ref.child(username).get()
+
+        if user_classes:
+            if username.startswith("t!"):
+                # If teacher, load classes from user_classes
+                for class_name, class_code in user_classes.items():
+                    class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
+                    self.teacher_classpage.ids.classes_layout.add_widget(class_button)
+            else:
+                # If student, load classes from user_classes
+                for class_code in user_classes:
+                    class_button = ClassButton(text=class_code, bold=True)
+                    self.student_classpage.ids.classes_layout.add_widget(class_button)
 
     def check_credentials(self, username, password):
         # Check credentials
@@ -80,7 +97,7 @@ class LogPage(BoxLayout):
 
     def switch_to_class_homepage(self, username):
         if username.startswith("t!"):
-            App.get_running_app().switch_to_teacher_classpage()
+            App.get_running_app().switch_to_teacher_classpage(username)  # Pass username here
         else:
             App.get_running_app().switch_to_student_classpage()
 
@@ -90,8 +107,9 @@ class ClassPage(BoxLayout):
 class TeacherClassPage(ClassPage):
     class_data = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, username, **kwargs):
         super(TeacherClassPage, self).__init__(**kwargs)
+        self.username = username  # Store the username
         self.register_event_type('on_class_selected')
         self.load_class_data()
 
@@ -101,15 +119,22 @@ class TeacherClassPage(ClassPage):
         if not self.class_data:
             self.class_data = {}
 
+        # Display classes already created by the teacher
+        for class_name, code in self.class_data.items():
+            class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
+            class_button.class_code = code
+            class_button.bind(on_release=self.on_class_button_pressed)
+            self.ids.classes_layout.add_widget(class_button)
+
     def open_popup(self):
         popup_layout = BoxLayout(orientation="vertical", padding="10dp")
         self.class_name_input = TextInput(hint_text="Enter class name", multiline=False, size_hint_y=None, height="40dp")
-        # Listen for key press event in TextInput
         self.class_name_input.bind(on_text_validate=self.add_class)
         popup_layout.add_widget(self.class_name_input)
-        # Set background color for the "Add Class" button
+
         add_class_button = Button(text="Add Class", on_press=self.add_class, background_color=(0.2, 0.6, 1, 1))
         popup_layout.add_widget(add_class_button)
+
         popup = Popup(title="New Class", content=popup_layout, size_hint=(None, None), size=("300dp", "200dp"))
         popup.open()
 
@@ -117,16 +142,24 @@ class TeacherClassPage(ClassPage):
         class_name = self.class_name_input.text
         if class_name:
             code = self.generate_unique_code()
-            class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
-            class_button.class_code = code  # Setting custom property
-            class_button.bind(on_release=self.on_class_button_pressed)  # Call on_class_button_pressed here
-            self.ids.classes_layout.add_widget(class_button)
             self.class_data[class_name] = code
 
             # Write to Firebase Realtime Database
             class_data_ref = db.reference('class_data')
             class_data_ref.set(self.class_data)
+            
+            # Update user classes
+            user_classes_ref = db.reference('user_classes')
+            user_classes_ref.child('t!' + self.username).update({class_name: code})  # Update with username
 
+            print("Class data after adding:", self.class_data)  # Debugging
+
+            # Add button for the newly added class
+            class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
+            class_button.class_code = code
+            class_button.bind(on_release=self.on_class_button_pressed)
+            self.ids.classes_layout.add_widget(class_button)
+            
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
         return code
@@ -168,16 +201,15 @@ class StudentClassPage(ClassPage):
                 self.ids.classes_layout.add_widget(class_button)
                 self.add_student_to_class_list(class_code, student_name)
                 self.switch_to_student_homepage()
+
+                # Update user's classes in Firebase Realtime Database
+                user_classes_ref = db.reference('user_classes')
+                user_classes_ref.child(student_name).push(class_code)
             else:
-                # Show error message if class code is not valid
-                error_label = Label(text="Invalid class code. Please try again.", color=(1, 0, 0, 1))
+                # Show error message if class code or student name is empty
+                error_label = Label(text="Please enter class code and your name.", color=(1, 0, 0, 1))
                 popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
                 popup_layout.open()
-        else:
-            # Show error message if class code or student name is empty
-            error_label = Label(text="Please enter class code and your name.", color=(1, 0, 0, 1))
-            popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
-            popup_layout.open()
             
     def add_student_to_class_list(self, class_code, student_name):
         with open('class_list.csv', 'a', newline='') as file:
@@ -327,7 +359,7 @@ class FitnessApp(App):
         except FileNotFoundError:
             self.loginpage.user_database = {}
 
-        self.teacher_classpage = TeacherClassPage()
+        self.teacher_classpage = None  # Initialize as None
         self.class_list = ClassListPage(class_code="")
 
         return self.startinghomepage
@@ -336,7 +368,8 @@ class FitnessApp(App):
         self.startinghomepage.clear_widgets()
         self.startinghomepage.add_widget(self.loginpage)
 
-    def switch_to_teacher_classpage(self):
+    def switch_to_teacher_classpage(self, username):  # Pass username here
+        self.teacher_classpage = TeacherClassPage(username=username)  # Pass username to the constructor
         self.root.clear_widgets()  # Clear all widgets
         self.root.add_widget(self.teacher_classpage)
 
