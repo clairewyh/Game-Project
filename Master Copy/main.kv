@@ -190,3 +190,31 @@
         background_color: 0, 0.5, 1, 0.8
         background_normal: ''
         bold: True
+
+<TeacherGoalpage>:
+    orientation: 'vertical'
+    BoxLayout:
+        size_hint_y: 0.2
+        Label:
+            markup: True
+            text: '[b]Class Name[/b]'
+            font_size: '1cm'
+
+    Button:
+        text: 'Goals:'
+        size_hint_y: 0.1
+        background_color: 0, 0.5, 1, 0.8
+        background_normal: ''
+        bold: True
+
+    BoxLayout:
+        id: goals_box
+        orientation: 'vertical'
+        size_hint_y: 0.4
+
+    Button:
+        text: 'Click here to go to the Fitness Testing Page'
+        size_hint_y: 0.3
+        background_color: 0, 0.5, 1, 0.8
+        background_normal: ''
+        bold: True
