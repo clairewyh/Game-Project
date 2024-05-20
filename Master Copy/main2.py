@@ -11,9 +11,9 @@ from kivy.core.window import Window
 from kivy.uix.textinput import TextInput
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.event import EventDispatcher
+import os
 
-sm = ScreenManager()
-Builder.load_file('main.kv')
+Builder.load_file('main2.kv')
 
 class StartingHomepage(BoxLayout):
     pass
@@ -28,7 +28,7 @@ class LogPage(BoxLayout):
     def __init__(self, **kwargs):
         super(LogPage, self).__init__(**kwargs)
         self.user_database = {}  # Dictionary to store user credentials
-
+ 
     def login(self):
         username = self.ids.username_input.text
         password = self.ids.password_input.text
@@ -62,7 +62,7 @@ class LogPage(BoxLayout):
         self.user_database[username] = password
         self.show_popup('Success', 'Sign up successful!')
         
-        # Save user database to file
+        # Save user database to file   
         with open('user_database.json', 'w') as f:
             json.dump(self.user_database, f)
     
@@ -158,8 +158,8 @@ class StudentClassPage(ClassPage):
         join_class_button = Button(text="Join Class", on_press=self.join_class, background_color=(0.2, 0.6, 1, 1))
         popup_layout.add_widget(join_class_button)
         popup = Popup(title="Join Class", content=popup_layout, size_hint=(None, None), size=("300dp", "200dp"))
-        popup.open() 
-   
+        popup.open()
+
     def join_class(self, instance):
         class_code = self.class_code_input.text
         student_name = self.student_name_input.text
@@ -206,7 +206,67 @@ class StudentClassPage(ClassPage):
     def switch_to_student_homepage(self):  # Added this method
         self.clear_widgets()
         student_homepage = StudentHomepage()
-        self.add_widget(student_homepage) 
+        self.add_widget(student_homepage)
+
+class ClassListPage(BoxLayout):
+    def __init__(self, class_code, **kwargs):
+        super().__init__(**kwargs)
+        self.class_code = class_code
+        self.load_students()
+
+    def load_students(self):
+        try:
+            with open('class_list.csv', newline='') as csvfile:
+                reader = csv.reader(csvfile)
+                students = [row[1] for row in reader if row[0] == self.class_code] 
+                if students:
+                    for student in students:
+                        student_button = Button(text=student, font_size=30, bold=True, size_hint_y=None, height="50dp")
+                        student_button.bind(on_release=lambda instance, student_name=student: self.on_student_button_pressed(student_name))  # Pass student_name to the method
+                        self.ids.students.add_widget(student_button)
+                else:
+                    self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
+        except FileNotFoundError:
+            self.ids.students.add_widget(Label(text="File not found: class_list.csv", font_size=30, bold=True))
+
+    def on_student_button_pressed(self, student_name):
+        # Navigate to TeacherGoalpage and pass the student_name
+        App.get_running_app().switch_to_teacher_goalpage(student_name)
+
+class TeacherGoalpage(BoxLayout):
+    def __init__(self, student_name, **kwargs):
+        super().__init__(**kwargs)
+        self.student_name = student_name
+        self.load_goals()
+
+    # Load goals from JSON file and display them
+    def load_goals(self):
+        try:
+            with open('goal_database.json', 'r') as f:
+                goals_list = json.load(f)
+                print("Loaded goals list:", goals_list)  # Debugging: Print the loaded goals list
+        except (FileNotFoundError, json.JSONDecodeError):
+            goals_list = []
+ 
+        # Clear existing labels if any
+        self.ids.goals_box.clear_widgets()
+
+        # Find goals for the selected student
+        student_goals = None
+        for student_data in goals_list:
+            name = student_data.get('Name', 'Unknown')
+            if name == self.student_name:
+                student_goals = student_data.get('Goals', {})
+                break
+
+        # Display the student's goals if found
+        if student_goals:
+            for key, value in student_goals.items():
+                goal_label = Label(text=f'{self.student_name} - {key}: {value}')
+                self.ids.goals_box.add_widget(goal_label)
+        else:
+            error_label = Label(text=f'No goals found for {self.student_name}.', color=(1, 0, 0, 1))
+            self.ids.goals_box.add_widget(error_label)
 
 class StudentHomepage(BoxLayout):
 # Prompts the user to set 3 goals for themselves
@@ -238,101 +298,12 @@ class StudentHomepage(BoxLayout):
                       content=Label(text=message),
                       size_hint=(None, None), size=(400, 200))
         popup.open()  
-    
+
     def switch_to_exercise_screen(self):
-        self.clear_widgets()
-        exercise_screen = ExerciseScreen()
-        self.add_widget(exercise_screen) 
-
-class HomeScreen(Screen):
-    pass
+        App.get_running_app().switch_to_exercise_screen()
 
 
-class ExerciseScreen(Screen):
-    def __init__(self, **kwargs):
-        super(ExerciseScreen, self).__init__(**kwargs)
-        self.round_number = None
-        self.exercise_data = self.load_saved_data()  # Load saved data during initialization
 
-    def on_pre_enter(self, *args):
-        if self.round_number:
-            self.load_exercises()
-            self.load_data()
-
-    def load_exercises(self):
-        # Remove previously added widgets
-        self.ids.exercise_inputs.clear_widgets()
-
-        exercises = [
-            "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
-            "plank hold", "vertical jump or broad jump", "sit and reach", "20-yard dash",
-            "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
-            "battle rope feed", "30s jump test"
-        ]
-
-        for exercise in exercises:
-            exercise_label = ExerciseLabel(text=exercise)
-            exercise_input_goal = ExerciseInput(hint_text="Goal")
-            exercise_input_achieved = ExerciseInput(hint_text="Achieved")
-
-            self.ids.exercise_inputs.add_widget(exercise_label)
-            self.ids.exercise_inputs.add_widget(exercise_input_goal)
-            self.ids.exercise_inputs.add_widget(exercise_input_achieved)
-
-    def load_data(self):
-        # Load exercise data for the current round
-        round_data = self.exercise_data.get(str(self.round_number), {})
-        for widget in self.ids.exercise_inputs.children:
-            if isinstance(widget, ExerciseInput):
-                exercise_name = widget.parent.children[0].text
-                exercise_round_data = round_data.get(exercise_name, {})
-                widget.text = exercise_round_data.get("goal", "")
-                widget.parent.children[2].text = exercise_round_data.get("achieved", "")
-
-    def load_saved_data(self):
-        try:
-            with open("fitness_data.json", "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {}
-
-    def save_data(self):
-        # Save exercise data to the exercise_data dictionary
-        if str(self.round_number) not in self.exercise_data:
-            self.exercise_data[str(self.round_number)] = {}
-
-        exercise_inputs = self.ids.exercise_inputs.children
-        # Iterate over widgets in pairs, each pair represents an exercise
-        for i in range(0, len(exercise_inputs), 3):
-            exercise_label = exercise_inputs[i + 2]
-            exercise_input_goal = exercise_inputs[i + 1]
-            exercise_input_achieved = exercise_inputs[i]
-
-            exercise_name = exercise_label.text
-            self.exercise_data[str(self.round_number)][exercise_name] = {
-                "goal": exercise_input_goal.text,
-                "achieved": exercise_input_achieved.text
-            }
-
-        # Save exercise data to the JSON file
-        with open("fitness_data.json", "w") as f:
-            json.dump(self.exercise_data, f, indent=4)
-
-        # Show popup after saving data
-        popup = Popup(title='Success',
-                      content=Label(text='Your changes are saved!'),
-                      size_hint=(None, None), size=(400, 200))
-        # Show the popup
-        popup.open()
-
-
-class ExerciseInput(TextInput):
-    pass
-
-
-class ExerciseLabel(Label):
-    pass
-                
 class ClassListPage(BoxLayout):
     def __init__(self, class_code, **kwargs):
         super().__init__(**kwargs)
@@ -353,13 +324,98 @@ class ClassListPage(BoxLayout):
         except FileNotFoundError:
             self.ids.students.add_widget(Label(text="File not found: class_list.csv", font_size=30, bold=True))
 
- 
+class ExerciseInput(TextInput):
+    pass
 
+class ExerciseLabel(Label):
+    pass
+
+class HomeScreen(BoxLayout):
+    def switch_to_round(self, round_number):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(RoundScreen(round_number=round_number))
+
+class RoundScreen(BoxLayout):
+    def __init__(self, round_number, **kwargs):
+        super(RoundScreen, self).__init__(**kwargs)
+        self.round_number = round_number
+        self.exercise_data = self.load_saved_data()
+        self.orientation = 'vertical'
+        self.spacing = '10dp'
+        self.padding = '10dp'
+        self.load_exercises()
+        self.load_data()
+
+    def load_exercises(self):
+        self.ids.exercise_inputs.clear_widgets()
+
+        exercises = [
+            "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
+            "plank hold", "vertical/broad jump", "sit and reach", "20-yard dash",
+            "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
+            "battle rope feed", "30s jump test"
+        ]
+
+        for exercise in exercises:
+            exercise_label = ExerciseLabel(text=exercise)
+            exercise_input_goal = ExerciseInput(hint_text="Goal")
+            exercise_input_achieved = ExerciseInput(hint_text="Achieved")
+
+            self.ids.exercise_inputs.add_widget(exercise_label)
+            self.ids.exercise_inputs.add_widget(exercise_input_goal)
+            self.ids.exercise_inputs.add_widget(exercise_input_achieved)
+
+    def load_data(self):
+        round_data = self.exercise_data.get(str(self.round_number), {})
+        for widget in self.ids.exercise_inputs.children:
+            if isinstance(widget, ExerciseInput):
+                exercise_name = widget.parent.children[0].text
+                exercise_round_data = round_data.get(exercise_name, {})
+                widget.text = exercise_round_data.get("goal", "")
+                widget.parent.children[2].text = exercise_round_data.get("achieved", "")
+
+    def load_saved_data(self):
+        try:
+            with open("fitness_data.json", "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
+
+    def save_data(self):
+        if str(self.round_number) not in self.exercise_data:
+            self.exercise_data[str(self.round_number)] = {}
+
+        exercise_inputs = self.ids.exercise_inputs.children
+        for i in range(0, len(exercise_inputs), 3):
+            exercise_label = exercise_inputs[i + 2]
+            exercise_input_goal = exercise_inputs[i + 1]
+            exercise_input_achieved = exercise_inputs[i]
+
+            exercise_name = exercise_label.text
+            self.exercise_data[str(self.round_number)][exercise_name] = {
+                "goal": exercise_input_goal.text,
+                "achieved": exercise_input_achieved.text
+            }
+
+        with open("fitness_data.json", "w") as f:
+            json.dump(self.exercise_data, f, indent=4)
+
+        popup = Popup(title='Success',
+                      content=Label(text='Your changes are saved!'),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()
+
+    def switch_to_home(self):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(HomeScreen())
 
 class FitnessApp(App):
     def build(self):
         self.startinghomepage = StartingHomepage()
         self.loginpage = LogPage()
+        self.exercise_screen = HomeScreen()
         
         # Initialize user database
         try:
@@ -371,16 +427,7 @@ class FitnessApp(App):
         self.teacher_classpage = TeacherClassPage()
         self.class_list = ClassListPage(class_code="")
 
-        sm.add_widget(HomeScreen(name='home'))
-        sm.add_widget(ExerciseScreen(name='exercise'))
-
         return self.startinghomepage
-        
-    def on_round_click(self, round_number):
-        exercise_screen = self.root.get_screen('exercise')
-        exercise_screen.round_number = round_number
-        exercise_screen.load_data()  # Load data when round is clicked
-        self.root.current = 'exercise'
 
     def switch_to_login(self):
         self.startinghomepage.clear_widgets()
@@ -400,14 +447,16 @@ class FitnessApp(App):
         self.class_list = ClassListPage(class_code=class_code)
         self.root.add_widget(self.class_list)
 
-    def switch_to_exercise_screen(self):
-        self.root.clear_widgets()   
-        self.exercisescreen = ExerciseScreen()
-        self.root.add_widget(self.exercisescreen)
+    def switch_to_teacher_goalpage(self, student_name):
+        self.root.clear_widgets()  # Clear all widgets
+        self.teacher_goalpage = TeacherGoalpage(student_name=student_name)  # Pass student_name to the TeacherGoalpage
+        self.root.add_widget(self.teacher_goalpage)
 
-    
+    def switch_to_exercise_screen(self):
+        self.root.clear_widgets()
+        self.root.add_widget(self.exercise_screen)
 
 if __name__ == '__main__':
     Window.size=(397,697)
     Window.clearcolor = 0.2, 0.8, 1, 1
-    FitnessApp().run()
+    FitnessApp().run() 
