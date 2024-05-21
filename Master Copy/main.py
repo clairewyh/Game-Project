@@ -49,22 +49,25 @@ class LogPage(BoxLayout):
             self.switch_to_class_homepage(username)
         else:
             self.show_popup('Error', 'Invalid username or password.')
-    
+        
     def load_user_classes(self, username):
+        if not username:
+            self.show_popup('Error', 'Username cannot be empty.')
+            return
+
         classes_ref = db.reference('user_classes')
         user_classes = classes_ref.child(username).get()
 
         if user_classes:
             if username.startswith("t!"):
-                # If teacher, load classes from user_classes
                 for class_name, class_code in user_classes.items():
                     class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
                     self.teacher_classpage.ids.classes_layout.add_widget(class_button)
             else:
-                # If student, load classes from user_classes
                 for class_code in user_classes:
                     class_button = ClassButton(text=class_code, bold=True)
                     self.student_classpage.ids.classes_layout.add_widget(class_button)
+
 
     def check_credentials(self, username, password):
         # Check credentials
@@ -140,25 +143,24 @@ class TeacherClassPage(ClassPage):
 
     def add_class(self, instance):
         class_name = self.class_name_input.text
-        if class_name:
+        if class_name and self.username:
             code = self.generate_unique_code()
             self.class_data[class_name] = code
 
             # Write to Firebase Realtime Database
             class_data_ref = db.reference('class_data')
             class_data_ref.set(self.class_data)
-            
+
             # Update user classes
             user_classes_ref = db.reference('user_classes')
-            user_classes_ref.child('t!' + self.username).update({class_name: code})  # Update with username
-
-            print("Class data after adding:", self.class_data)  # Debugging
+            user_classes_ref.child('t!' + self.username).update({class_name: code})
 
             # Add button for the newly added class
             class_button = ClassButton(text=f"{class_name}: {code}", bold=True)
             class_button.class_code = code
             class_button.bind(on_release=self.on_class_button_pressed)
             self.ids.classes_layout.add_widget(class_button)
+
             
     def generate_unique_code(self):
         code = str(randint(10000, 99999))
@@ -206,37 +208,37 @@ class StudentClassPage(ClassPage):
                 user_classes_ref = db.reference('user_classes')
                 user_classes_ref.child(student_name).push(class_code)
             else:
-                # Show error message if class code or student name is empty
-                error_label = Label(text="Please enter class code and your name.", color=(1, 0, 0, 1))
-                popup_layout = Popup(title="Error", content=error_label, size_hint=(None, None), size=("300dp", "150dp"))
-                popup_layout.open()
-            
+                self.show_popup('Error', 'Invalid class code.')
+        else:
+            self.show_popup('Error', 'Please enter both class code and your name.')
+
     def add_student_to_class_list(self, class_code, student_name):
-        with open('class_list.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([class_code, student_name])
-      
-    def fetch_class_data(self):        
-        # Clear existing class data
-        self.class_data.clear()
-        # Read class data from CSV file
-        with open('class_data.csv', 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                class_name, class_code = row
-                self.class_data[class_name] = class_code
-        
+        if not class_code or not student_name:
+            self.show_popup('Error', 'Class code and student name cannot be empty.')
+            return
+
+        class_list_ref = db.reference('class_list')
+        class_list_ref.child(class_code).push(student_name)
+
     def validate_class_code(self, class_code_input):
-        self.fetch_class_data()
-        if class_code_input in self.class_data.values():
-            for class_name, class_code in self.class_data.items():
+        class_data_ref = db.reference('class_data')
+        class_data = class_data_ref.get()
+        if class_code_input in class_data.values():
+            for class_name, class_code in class_data.items():
                 if class_code == class_code_input:
-                    return class_name 
-    
-    def switch_to_student_homepage(self):  # Added this method
+                    return class_name
+        return None
+
+    def switch_to_student_homepage(self):
         self.clear_widgets()
         student_homepage = StudentHomepage()
         self.add_widget(student_homepage)
+    
+    def show_popup(self, title, message):
+        popup = Popup(title=title,
+                      content=Label(text=message),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()
 
 class ClassListPage(BoxLayout):
     def __init__(self, class_code, **kwargs):
@@ -245,19 +247,20 @@ class ClassListPage(BoxLayout):
         self.load_students()
 
     def load_students(self):
-        try:
-            with open('class_list.csv', newline='') as csvfile:
-                reader = csv.reader(csvfile)
-                students = [row[1] for row in reader if row[0] == self.class_code] 
-                if students:
-                    for student in students:
-                        student_button = Button(text=student, font_size=30, bold=True, size_hint_y=None, height="50dp")
-                        student_button.bind(on_release=lambda instance, student_name=student: self.on_student_button_pressed(student_name))  # Pass student_name to the method
-                        self.ids.students.add_widget(student_button)
-                else:
-                    self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
-        except FileNotFoundError:
-            self.ids.students.add_widget(Label(text="File not found: class_list.csv", font_size=30, bold=True))
+        if not self.class_code:
+            self.ids.students.add_widget(Label(text="Invalid class code", font_size=30, bold=True))
+            return
+
+        students_ref = db.reference('class_list')
+        students = students_ref.child(self.class_code).get()
+
+        if students:
+            for student_id, student_name in students.items():
+                student_button = Button(text=student_name, font_size=30, bold=True, size_hint_y=None, height="50dp")
+                student_button.bind(on_release=lambda instance, student_name=student_name: self.on_student_button_pressed(student_name))
+                self.ids.students.add_widget(student_button)
+        else:
+            self.ids.students.add_widget(Label(text="No students found for class code {}".format(self.class_code), font_size=30, bold=True))
 
     def on_student_button_pressed(self, student_name):
         # Navigate to TeacherGoalpage and pass the student_name
@@ -269,21 +272,20 @@ class TeacherGoalpage(BoxLayout):
         self.student_name = student_name
         self.load_goals()
 
-    # Load goals from JSON file and display them
+    # Load goals from Firebase Realtime Database and display them
     def load_goals(self):
-        try:
-            with open('goal_database.json', 'r') as f:
-                goals_list = json.load(f)
-                print("Loaded goals list:", goals_list)  # Debugging: Print the loaded goals list
-        except (FileNotFoundError, json.JSONDecodeError):
-            goals_list = []
+        goals_ref = db.reference('goal_database')
+        goals_data = goals_ref.get()
+        
+        if not goals_data:
+            goals_data = []
 
         # Clear existing labels if any
         self.ids.goals_box.clear_widgets()
 
         # Find goals for the selected student
         student_goals = None
-        for student_data in goals_list:
+        for student_id, student_data in goals_data.items():
             name = student_data.get('Name', 'Unknown')
             if name == self.student_name:
                 student_goals = student_data.get('Goals', {})
@@ -305,12 +307,10 @@ class StudentHomepage(BoxLayout):
         goal2 = self.ids.second_goal.text
         goal3 = self.ids.third_goal.text
 
-        # If not all 3 goals are inputted, popup error will display
         if goal1 == '' or goal2 == '' or goal3 == '':
             self.show_popup('Error', 'Please enter three goals.')
             return
 
-        # Stores goals in dictionary
         new_goal = {
             'Name': name,
             'Goals': {
@@ -320,25 +320,11 @@ class StudentHomepage(BoxLayout):
             }
         }
 
-        # Load existing goals from the file
-        goal_database_path = 'goal_database.json'
-        if os.path.exists(goal_database_path):
-            with open(goal_database_path, 'r') as f:
-                try:
-                    goals_list = json.load(f)
-                except json.JSONDecodeError:
-                    goals_list = []
-        else:
-            goals_list = []
-
-        # Append the new goal to the list
-        goals_list.append(new_goal)
-
-        # Write the updated list back to the file
-        with open(goal_database_path, 'w') as f:
-            json.dump(goals_list, f, indent=4)
+        goals_ref = db.reference('goal_database')
+        goals_ref.push(new_goal)
 
         self.show_popup('Success', 'Goals saved successfully.')
+
     
     # Popup display
     def show_popup(self, title, message):
