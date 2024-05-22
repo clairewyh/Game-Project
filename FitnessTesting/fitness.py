@@ -1,39 +1,44 @@
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.gridlayout import GridLayout
+from kivy.app import App
+from kivy.core.window import Window
 from kivy.lang import Builder
 import json
-from kivy.app import App
 
-
-# Define the screen manager
-sm = ScreenManager()
-
-
-class HomeScreen(Screen):
+class ExerciseInput(TextInput):
     pass
 
+class ExerciseLabel(Label):
+    pass
 
-class ExerciseScreen(Screen):
-    def __init__(self, **kwargs):
-        super(ExerciseScreen, self).__init__(**kwargs)
-        self.round_number = None
-        self.exercise_data = self.load_saved_data()  # Load saved data during initialization
+class HomeScreen(BoxLayout):
+    def switch_to_round(self, round_number):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(RoundScreen(round_number=round_number))
 
-    def on_pre_enter(self, *args):
-        if self.round_number:
-            self.load_exercises()
-            self.load_data()
+class RoundScreen(BoxLayout):
+    def __init__(self, round_number, **kwargs):
+        super(RoundScreen, self).__init__(**kwargs)
+        self.round_number = round_number
+        self.exercise_data = self.load_saved_data()
+        self.orientation = 'vertical'
+        self.spacing = '10dp'
+        self.padding = '10dp'
+        self.load_exercises()
+        self.load_data()
 
     def load_exercises(self):
-        # Remove previously added widgets
         self.ids.exercise_inputs.clear_widgets()
 
         exercises = [
             "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
-            "plank hold", "vertical jump or broad jump", "sit and reach", "20-yard dash",
+            "plank hold", "vertical/broad jump", "sit and reach", "20-yard dash",
             "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
             "battle rope feed", "30s jump test"
         ]
@@ -48,7 +53,6 @@ class ExerciseScreen(Screen):
             self.ids.exercise_inputs.add_widget(exercise_input_achieved)
 
     def load_data(self):
-        # Load exercise data for the current round
         round_data = self.exercise_data.get(str(self.round_number), {})
         for widget in self.ids.exercise_inputs.children:
             if isinstance(widget, ExerciseInput):
@@ -65,12 +69,10 @@ class ExerciseScreen(Screen):
             return {}
 
     def save_data(self):
-        # Save exercise data to the exercise_data dictionary
         if str(self.round_number) not in self.exercise_data:
             self.exercise_data[str(self.round_number)] = {}
 
         exercise_inputs = self.ids.exercise_inputs.children
-        # Iterate over widgets in pairs, each pair represents an exercise
         for i in range(0, len(exercise_inputs), 3):
             exercise_label = exercise_inputs[i + 2]
             exercise_input_goal = exercise_inputs[i + 1]
@@ -82,39 +84,23 @@ class ExerciseScreen(Screen):
                 "achieved": exercise_input_achieved.text
             }
 
-        # Save exercise data to the JSON file
         with open("fitness_data.json", "w") as f:
             json.dump(self.exercise_data, f, indent=4)
 
-        # Show popup after saving data
         popup = Popup(title='Success',
                       content=Label(text='Your changes are saved!'),
                       size_hint=(None, None), size=(400, 200))
-        # Show the popup
         popup.open()
 
-
-class ExerciseInput(TextInput):
-    pass
-
-
-class ExerciseLabel(Label):
-    pass
-
+    def switch_to_home(self):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(HomeScreen())
 
 class FitnessApp(App):
     def build(self):
-        Builder.load_file('fitness.kv')
-        sm.add_widget(HomeScreen(name='home'))
-        sm.add_widget(ExerciseScreen(name='exercise'))
-        return sm
-
-    def on_round_click(self, round_number):
-        exercise_screen = self.root.get_screen('exercise')
-        exercise_screen.round_number = round_number
-        exercise_screen.load_data()  # Load data when round is clicked
-        self.root.current = 'exercise'
-
+        Window.clearcolor = 0.2, 0.8, 1, 1
+        return HomeScreen()
 
 if __name__ == '__main__':
     FitnessApp().run()
