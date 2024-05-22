@@ -15,7 +15,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 Builder.load_file('main.kv')
-cred = credentials.Certificate("/Users/celina/Downloads/projectmanagement-27c6b-firebase-adminsdk-z87rb-8af201d7bc.json")
+cred = credentials.Certificate("C:/Users\clair\Downloads\projectmanagement-27c6b-firebase-adminsdk-z87rb-bc8d3160d3.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://projectmanagement-27c6b-default-rtdb.firebaseio.com/'
 })
@@ -305,7 +305,7 @@ class StudentHomepage(BoxLayout):
         name = self.ids.name_input.text
         goal1 = self.ids.first_goal.text
         goal2 = self.ids.second_goal.text
-        goal3 = self.ids.third_goal.text
+        goal3 = self.ids.third_goal.text  
 
         if goal1 == '' or goal2 == '' or goal3 == '':
             self.show_popup('Error', 'Please enter three goals.')
@@ -332,12 +332,104 @@ class StudentHomepage(BoxLayout):
                       content=Label(text=message),
                       size_hint=(None, None), size=(400, 200))
         popup.open()
+    
+    def switch_to_exercise_screen(self):
+        App.get_running_app().switch_to_exercise_screen()
+
+
+class ExerciseInput(TextInput):
+    pass
+
+class ExerciseLabel(Label):
+    pass
+
+class HomeScreen(BoxLayout):
+    def switch_to_round(self, round_number):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(RoundScreen(round_number=round_number))
+
+class RoundScreen(BoxLayout):
+    def __init__(self, round_number, **kwargs):
+        super(RoundScreen, self).__init__(**kwargs)
+        self.round_number = round_number
+        self.exercise_data = self.load_saved_data()
+        self.orientation = 'vertical'
+        self.spacing = '10dp'
+        self.padding = '10dp'
+        self.load_exercises()
+        self.load_data()
+
+    def load_exercises(self):
+        self.ids.exercise_inputs.clear_widgets()
+
+        exercises = [
+            "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
+            "plank hold", "vertical/broad jump", "sit and reach", "20-yard dash",
+            "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
+            "battle rope feed", "30s jump test"
+        ]
+
+        for exercise in exercises:
+            exercise_label = ExerciseLabel(text=exercise)
+            exercise_input_goal = ExerciseInput(hint_text="Goal")
+            exercise_input_achieved = ExerciseInput(hint_text="Achieved")
+
+            self.ids.exercise_inputs.add_widget(exercise_label)
+            self.ids.exercise_inputs.add_widget(exercise_input_goal)
+            self.ids.exercise_inputs.add_widget(exercise_input_achieved)
+
+    def load_data(self):
+        round_data = self.exercise_data.get(str(self.round_number), {})
+        for widget in self.ids.exercise_inputs.children:
+            if isinstance(widget, ExerciseInput):
+                exercise_name = widget.parent.children[0].text
+                exercise_round_data = round_data.get(exercise_name, {})
+                widget.text = exercise_round_data.get("goal", "")
+                widget.parent.children[2].text = exercise_round_data.get("achieved", "")
+
+    def load_saved_data(self):
+        try:
+            with open("fitness_data.json", "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
+
+    def save_data(self):
+        if str(self.round_number) not in self.exercise_data:
+            self.exercise_data[str(self.round_number)] = {}
+
+        exercise_inputs = self.ids.exercise_inputs.children
+        for i in range(0, len(exercise_inputs), 3):
+            exercise_label = exercise_inputs[i + 2]
+            exercise_input_goal = exercise_inputs[i + 1]
+            exercise_input_achieved = exercise_inputs[i]
+
+            exercise_name = exercise_label.text
+            self.exercise_data[str(self.round_number)][exercise_name] = {
+                "goal": exercise_input_goal.text,
+                "achieved": exercise_input_achieved.text
+            }
+
+        with open("fitness_data.json", "w") as f:
+            json.dump(self.exercise_data, f, indent=4)
+
+        popup = Popup(title='Success',
+                      content=Label(text='Your changes are saved!'),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()
+
+    def switch_to_home(self):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.switch_to_home()
 
 class FitnessApp(App):
     def build(self):
         self.startinghomepage = StartingHomepage()
         self.loginpage = LogPage()
-        
+        self.exercise_screen = HomeScreen()
+
         # Initialize user database
         try:
             with open('user_database.json', 'r') as f:
@@ -361,7 +453,7 @@ class FitnessApp(App):
 
     def switch_to_student_classpage(self):
         self.root.clear_widgets()  # Clear all widgets
-        self.student_classpage = StudentClassPage()
+        self.student_classpage = StudentClassPage()  
         self.root.add_widget(self.student_classpage) 
 
     def switch_to_classlist_page(self, class_code):
@@ -373,7 +465,11 @@ class FitnessApp(App):
         self.root.clear_widgets()  # Clear all widgets
         self.teacher_goalpage = TeacherGoalpage(student_name=student_name)  # Pass student_name to the TeacherGoalpage
         self.root.add_widget(self.teacher_goalpage)
-
+    
+    def switch_to_exercise_screen(self):
+        self.root.clear_widgets() 
+        self.root.add_widget(self.exercise_screen)
+    
 if __name__ == '__main__':
     Window.size=(397,697)
     Window.clearcolor = 0.2, 0.8, 1, 1
