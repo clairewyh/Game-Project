@@ -190,6 +190,97 @@
         background_color: 0, 0.5, 1, 0.8
         background_normal: ''
         bold: True
+        on_press: root.switch_to_exercise_screen()
+
+
+<HomeScreen>:
+    orientation: 'vertical'
+    spacing: '10dp'
+    padding: '10dp'
+    id: home
+
+    Label:
+        text: 'Select Round'
+        halign: 'center'
+        font_size: '20sp'
+
+    Button:
+        text: 'Round 1'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_round(1)
+
+    Button:
+        text: 'Round 2'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_round(2)
+
+    Button:
+        text: 'Round 3'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_round(3)
+
+    Button:
+        text: 'Round 4'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_round(4)
+
+    Button:
+        text: 'Round 5'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_round(5)
+
+
+<RoundScreen>:
+    orientation: 'vertical'
+    spacing: '10dp'
+    padding: '10dp'
+
+    ScrollView:
+        GridLayout:
+            id: exercise_inputs
+            cols: 3
+            spacing: '10dp'
+            padding: ('10dp', '10dp', '10dp', '20dp')  # Add bottom padding
+            size_hint_y: None
+            height: self.minimum_height
+            row_default_height: '40dp'
+            row_force_default: True
+            col_default_width: '40dp'  # Set a default width for label column
+
+    Button:
+        text: 'Save Changes'
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.save_data()
+        size_hint_y: None
+        height: "48dp"
+
+    Button:
+        text: "Back"
+        background_color: (0, 0.5, 1, 0.8)
+        on_release: root.switch_to_home()  # Navigate back to home screen
+        size_hint_y: None
+        height: "48dp"
+        size_hint: None, None
+        size: "100dp", "48dp"
+        pos_hint: {"x": 0, "top": 1}  # Position in the top-left corner
+
+
+<ExerciseLabel>:
+    Label:
+        text: root.text
+        halign: 'center'
+        font_size: '16sp'
+        size_hint_x: None
+        width: self.texture_size[0] + dp(5)  # Set width based on text size with some padding
+
+
+<ExerciseInput>:
+    TextInput:
+        hint_text: root.hint_text
+        multiline: False
+        font_size: '16sp'
+        size_hint_x: 0.3
+        padding: '10dp'
 
 <TeacherGoalpage>:
     orientation: 'vertical'
