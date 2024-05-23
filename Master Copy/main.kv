@@ -235,6 +235,24 @@
     spacing: '10dp'
     padding: '10dp'
 
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: "48dp"
+        padding: "10dp"
+
+        Label:
+            text: "User's Name:"
+            size_hint_x: None
+            width: "120dp"
+
+        TextInput:
+            id: user_name_input
+            hint_text: "Enter your name"
+            multiline: False
+            size_hint_x: None
+            width: "200dp"
+
     ScrollView:
         GridLayout:
             id: exercise_inputs
