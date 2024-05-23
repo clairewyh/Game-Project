@@ -15,7 +15,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 Builder.load_file('main.kv')
-cred = credentials.Certificate("C:/Users\clair\Downloads\projectmanagement-27c6b-firebase-adminsdk-z87rb-bc8d3160d3.json")
+cred = credentials.Certificate("/Users/celina/Downloads/projectmanagement-27c6b-firebase-adminsdk-z87rb-8af201d7bc.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://projectmanagement-27c6b-default-rtdb.firebaseio.com/'
 })
@@ -336,7 +336,6 @@ class StudentHomepage(BoxLayout):
     def switch_to_exercise_screen(self):
         App.get_running_app().switch_to_exercise_screen()
 
-
 class ExerciseInput(TextInput):
     pass
 
@@ -400,20 +399,26 @@ class RoundScreen(BoxLayout):
             self.exercise_data[str(self.round_number)] = {}
 
         exercise_inputs = self.ids.exercise_inputs.children
+        user_name = self.ids.user_name_input.text  # Retrieve user's name from TextInput
+
+        # Iterate through exercise inputs and update data in Firebase Realtime Database
         for i in range(0, len(exercise_inputs), 3):
             exercise_label = exercise_inputs[i + 2]
             exercise_input_goal = exercise_inputs[i + 1]
             exercise_input_achieved = exercise_inputs[i]
 
             exercise_name = exercise_label.text
-            self.exercise_data[str(self.round_number)][exercise_name] = {
-                "goal": exercise_input_goal.text,
-                "achieved": exercise_input_achieved.text
-            }
+            goal = exercise_input_goal.text
+            achieved = exercise_input_achieved.text
 
-        with open("fitness_data.json", "w") as f:
-            json.dump(self.exercise_data, f, indent=4)
+            # Update data in Firebase Realtime Database with user's name
+            round_ref = db.reference(f'fitness_data/{self.round_number}/{user_name}/{exercise_name}')
+            round_ref.update({
+                'goal': goal,
+                'achieved': achieved
+            })
 
+        # Display success popup
         popup = Popup(title='Success',
                       content=Label(text='Your changes are saved!'),
                       size_hint=(None, None), size=(400, 200))
