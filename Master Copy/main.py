@@ -21,7 +21,10 @@ firebase_admin.initialize_app(cred, {
 })
 
 class StartingHomepage(BoxLayout):
-    pass
+    def switch_to_teacherhome(self):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(TeacherFitnessPage())
 
 class UserButton(Button):
     pass
@@ -299,6 +302,9 @@ class TeacherGoalpage(BoxLayout):
         else:
             error_label = Label(text=f'No goals found for {self.student_name}.', color=(1, 0, 0, 1))
             self.ids.goals_box.add_widget(error_label)
+    
+    def go_to_fitness_page(self):
+        App.get_running_app().switch_to_teacher_fitness_page()
 
 class StudentHomepage(BoxLayout):
     def goal_setting(self):
@@ -429,10 +435,57 @@ class RoundScreen(BoxLayout):
         app.switch_to_home()
 
 class TeacherFitnessPage(BoxLayout):
-    pass
+    def switch_to_round_page(self, round_number):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(TeacherRoundPage(round_number=round_number))
 
 class TeacherRoundPage(BoxLayout):
-    pass
+    def __init__(self, round_number, **kwargs):
+        super(TeacherRoundPage, self).__init__(**kwargs)
+        self.round_number = round_number
+
+    def retrieve_data(self):
+        student_name = self.ids.student_name_input.text
+        if not student_name:
+            self.show_popup('Error', 'Please enter a student name.')
+            return
+
+        round_ref = db.reference(f'fitness_data/{self.round_number}/{student_name}')
+        round_data = round_ref.get()
+
+        if not round_data:
+            self.show_popup('Error', f'No data found for {student_name} in round {self.round_number}.')
+            return
+
+        self.display_data(round_data)
+
+    def display_data(self, round_data):
+        self.ids.exercise_data.clear_widgets()
+
+        for exercise, details in round_data.items():
+            if isinstance(details, dict):
+                goal = details.get('goal', 'N/A')
+                achieved = details.get('achieved', 'N/A')
+            else:
+                goal = 'N/A'
+                achieved = 'N/A'
+            
+            # Create a label for each exercise's data
+            exercise_label = Label(text=f'{exercise}: Goal - {goal}, Achieved - {achieved}', 
+                                size_hint_y=None, height='30dp', text_size=(None, None))
+            self.ids.exercise_data.add_widget(exercise_label)
+
+    def show_popup(self, title, message):
+        popup = Popup(title=title,
+                      content=Label(text=message),
+                      size_hint=(None, None), size=(400, 200))
+        popup.open()
+
+    def switch_to_teacherhome(self):
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(TeacherFitnessPage())
 
 class ReportGeneration(BoxLayout):
     pass
@@ -486,6 +539,14 @@ class FitnessApp(App):
     def switch_to_home(self):
         self.root.clear_widgets() 
         self.root.add_widget(self.exercise_screen)
+
+    def switch_to_teacher_fitness_page(self):
+        self.root.clear_widgets()
+        self.root.add_widget(TeacherFitnessPage())
+
+    def switch_to_teacherhome(self):  # Define the method here
+        self.root.clear_widgets()  
+        self.root.add_widget(TeacherFitnessPage())
     
 if __name__ == '__main__':
     Window.size=(397,697)
