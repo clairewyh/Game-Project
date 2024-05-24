@@ -1,6 +1,7 @@
 import json
+import firebase_admin
+import asyncio
 from random import randint
-import csv
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
@@ -9,8 +10,6 @@ from kivy.uix.button import Button
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.textinput import TextInput
-import os
-import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 
@@ -439,7 +438,24 @@ class TeacherFitnessPage(BoxLayout):
         app = App.get_running_app()
         app.root.clear_widgets()
         app.root.add_widget(TeacherRoundPage(round_number=round_number))
+    
+    def generate_report(self, *args):
+        student_username = self.student_input.text.strip()
+        if not student_username:
+            self.add_widget(Label(text="Please enter a student's username"))
+            return
+        app = App.get_running_app()
+        app.root.clear_widgets()
+        app.root.add_widget(ReportGeneration(student_username=student_username))
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.student_input = TextInput(hint_text="Enter student's username", multiline=False)
+        self.add_widget(self.student_input)
+        self.generate_button = Button(text="Generate Report")
+        self.generate_button.bind(on_press=self.generate_report)
+        self.add_widget(self.generate_button)
+        
 class TeacherRoundPage(BoxLayout):
     def __init__(self, round_number, **kwargs):
         super(TeacherRoundPage, self).__init__(**kwargs)
@@ -488,7 +504,55 @@ class TeacherRoundPage(BoxLayout):
         app.root.add_widget(TeacherFitnessPage())
 
 class ReportGeneration(BoxLayout):
-    pass
+    def __init__(self, student_username="", **kwargs):
+        super().__init__(**kwargs)
+        self.student_username = student_username
+        self.calculate_improvement()
+
+    def calculate_improvement(self):
+        # Clear previous data from the table
+        self.ids.table.clear_widgets()
+
+        # Initialize Firebase database reference
+        fitness_data_ref = db.reference('fitness_data')
+
+        # Asynchronously fetch fitness data
+        asyncio.ensure_future(self.fetch_fitness_data(fitness_data_ref, self.student_username))
+
+    async def fetch_fitness_data(self, fitness_data_ref, student_username):
+        # Initialize dictionary to store exercise data
+        exercise_data = {}
+
+        # Fetch fitness data for the given student
+        student_data = fitness_data_ref.order_by_key().equal_to(student_username).get()
+
+        if student_data:
+            # Loop through each round in the fitness data
+            for round_number in range(1, 5):
+                round_data = student_data.get(str(round_number), {})
+                
+                # Loop through each exercise in the round data
+                for exercise, details in round_data.items():
+                    if exercise not in exercise_data:
+                        exercise_data[exercise] = []
+
+                    # Calculate improvement percent for the exercise
+                    initial_value = int(details.get("1", {}).get("achieved", 0))
+                    final_value = int(details.get("5", {}).get("achieved", 0))
+                    improvement_percent = ((final_value - initial_value) / initial_value) * 100
+
+                    # Append improvement percent to exercise data
+                    exercise_data[exercise].append(improvement_percent)
+
+            # Calculate average improvement percent for each exercise
+            for exercise, improvement_list in exercise_data.items():
+                average_improvement = sum(improvement_list) / len(improvement_list)
+
+                # Display exercise name and average improvement percent
+                self.ids.table.add_widget(Label(text=exercise, size_hint_x=None, width=150))
+                self.ids.table.add_widget(Label(text=f"{round(average_improvement, 2)}%", size_hint_x=None, width=100))
+        else:
+            self.ids.table.add_widget(Label(text="No data found for this student"))
 
 class FitnessApp(App):
     def build(self):
@@ -547,7 +611,11 @@ class FitnessApp(App):
     def switch_to_teacherhome(self):  # Define the method here
         self.root.clear_widgets()  
         self.root.add_widget(TeacherFitnessPage())
-    
+
+    def switch_to_report_generation(self, student_username):
+        self.root.clear_widgets()
+        self.root.add_widget(ReportGeneration(student_username=student_username))
+
 if __name__ == '__main__':
     Window.size=(397,697)
     Window.clearcolor = 0.2, 0.8, 1, 1
