@@ -327,4 +327,50 @@
         background_color: 0, 0.5, 1, 0.8
         background_normal: ''
         bold: True
+        on_release: root.go_to_fitness_page()
+
+<TeacherFitnessPage>:
+    orientation: 'vertical'
+    padding: '10dp'
+    spacing: '10dp'
+    Button:
+        text: 'Round 1'
+        on_release: root.switch_to_round_page(1)
+    Button:
+        text: 'Round 2'
+        on_release: root.switch_to_round_page(2)
+    Button:
+        text: 'Round 3'
+        on_release: root.switch_to_round_page(3)
+    Button:
+        text: 'Round 4'
+        on_release: root.switch_to_round_page(4)
+    Button:
+        text: 'Round 5'
+        on_release: root.switch_to_round_page(5)
+
+<TeacherRoundPage>:
+    orientation: 'vertical'
+    padding: '10dp'
+    spacing: '10dp'
+    BoxLayout:
+        size_hint_y: None
+        height: '40dp'
+        TextInput:
+            id: student_name_input
+            hint_text: 'Enter student name'
+        Button:
+            text: 'Fetch Data'
+            on_release: root.retrieve_data()
+    ScrollView:
+        BoxLayout:
+            id: exercise_data
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+    Button:
+        text: 'Back to Teacher Fitness Page'
+        size_hint_y: None
+        height: '50dp'
+        on_release: app.root.switch_to_teacherhome()
 
