@@ -426,8 +426,7 @@ class RoundScreen(BoxLayout):
 
     def switch_to_home(self):
         app = App.get_running_app()
-        app.root.clear_widgets()
-        app.root.switch_to_home()
+        app.switch_to_home()
 
 class FitnessApp(App):
     def build(self):
@@ -472,6 +471,10 @@ class FitnessApp(App):
         self.root.add_widget(self.teacher_goalpage)
     
     def switch_to_exercise_screen(self):
+        self.root.clear_widgets() 
+        self.root.add_widget(self.exercise_screen)
+
+    def switch_to_home(self):
         self.root.clear_widgets() 
         self.root.add_widget(self.exercise_screen)
     
