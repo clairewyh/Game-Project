@@ -428,6 +428,15 @@ class RoundScreen(BoxLayout):
         app = App.get_running_app()
         app.switch_to_home()
 
+class TeacherFitnessPage(BoxLayout):
+    pass
+
+class TeacherRoundPage(BoxLayout):
+    pass
+
+class ReportGeneration(BoxLayout):
+    pass
+
 class FitnessApp(App):
     def build(self):
         self.startinghomepage = StartingHomepage()
