@@ -1,0 +1,29 @@
+#uploading to android phone using windows + linux
+
+#install linux using https://learn.microsoft.com/en-us/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package 
+#install buildozer
+pip3 install --user --upgrade buildozer
+pip install buildozer
+
+#install ubuntu 
+
+#in ubuntu terminal do: 
+sudo apt update
+sudo apt install python3-pip
+
+sudo pip3 install cython
+
+pip3 install cython
+sudo pip3 install buildozer
+sudo apt install -y python3-kivy python3-plyer python3-pil python3-sdl2
+sudo apt install -y build-essential git python3-dev libssl-dev libffi-dev
+
+buildozer init  #this creates buildozer.spec where u have to modify some details regarding the app
+buildozer -v android debug  
+
+#a new vscode version using ubuntu should be opened 
+#connect phone using usb, drag app file into phone 
+
+#if cython cannot be found, do:
+export PATH=$PATH:~/.local/bin
+buildozer -v android debug 
