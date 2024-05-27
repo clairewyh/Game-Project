@@ -13,7 +13,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 Builder.load_file('main.kv')
-cred = credentials.Certificate("/Users/celina/Downloads/projectmanagement-27c6b-firebase-adminsdk-z87rb-8af201d7bc.json")
+cred = credentials.Certificate("//Users/chloe/Desktop/projectmanagement-27c6b-firebase-adminsdk-z87rb-6a3092843b.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://projectmanagement-27c6b-default-rtdb.firebaseio.com/'
 })
