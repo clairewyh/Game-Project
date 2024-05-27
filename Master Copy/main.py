@@ -1,6 +1,5 @@
 import json
 import firebase_admin
-import asyncio
 from random import randint
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -357,19 +356,19 @@ class RoundScreen(BoxLayout):
     def __init__(self, round_number, **kwargs):
         super(RoundScreen, self).__init__(**kwargs)
         self.round_number = round_number
-        self.exercise_data = self.load_saved_data()
+        self.exercise_data = {}  # Initialize an empty dictionary to hold exercise data
         self.orientation = 'vertical'
         self.spacing = '10dp'
         self.padding = '10dp'
         self.load_exercises()
-        self.load_data()
+        self.load_data_from_firebase()
 
     def load_exercises(self):
         self.ids.exercise_inputs.clear_widgets()
 
         exercises = [
             "12-minute run", "2-minute burpees", "shoulder taps", "hand release push-ups",
-            "plank hold", "vertical/broad jump", "sit and reach", "20-yard dash",
+            "plank hold", "vertical jump", "sit and reach", "20-yard dash",
             "stork test", "kneeling chest launch", "Illinois agility test", "ins and outs",
             "battle rope feed", "30s jump test"
         ]
@@ -383,30 +382,31 @@ class RoundScreen(BoxLayout):
             self.ids.exercise_inputs.add_widget(exercise_input_goal)
             self.ids.exercise_inputs.add_widget(exercise_input_achieved)
 
-    def load_data(self):
-        round_data = self.exercise_data.get(str(self.round_number), {})
+    def load_data_from_firebase(self):
+        user_name = self.ids.user_name_input.text  # Retrieve user's name from TextInput
+        round_ref = db.reference(f'fitness_data/{self.round_number}/{user_name}')
+        
+        # Retrieve data from Firebase and populate exercise_data dictionary
+        data = round_ref.get()
+        if data:
+            self.exercise_data[str(self.round_number)] = data
+            self.populate_exercise_inputs(data)
+        else:
+            self.exercise_data[str(self.round_number)] = {}
+
+    def populate_exercise_inputs(self, data):
         for widget in self.ids.exercise_inputs.children:
             if isinstance(widget, ExerciseInput):
                 exercise_name = widget.parent.children[0].text
-                exercise_round_data = round_data.get(exercise_name, {})
+                exercise_round_data = data.get(exercise_name, {})
                 widget.text = exercise_round_data.get("goal", "")
                 widget.parent.children[2].text = exercise_round_data.get("achieved", "")
 
-    def load_saved_data(self):
-        try:
-            with open("fitness_data.json", "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {}
-
     def save_data(self):
-        if str(self.round_number) not in self.exercise_data:
-            self.exercise_data[str(self.round_number)] = {}
-
         exercise_inputs = self.ids.exercise_inputs.children
         user_name = self.ids.user_name_input.text  # Retrieve user's name from TextInput
 
-        # Iterate through exercise inputs and update data in Firebase Realtime Database
+        # Update exercise_data dictionary and Firebase Realtime Database
         for i in range(0, len(exercise_inputs), 3):
             exercise_label = exercise_inputs[i + 2]
             exercise_input_goal = exercise_inputs[i + 1]
@@ -416,7 +416,16 @@ class RoundScreen(BoxLayout):
             goal = exercise_input_goal.text
             achieved = exercise_input_achieved.text
 
-            # Update data in Firebase Realtime Database with user's name
+            # Update local exercise_data dictionary
+            if exercise_name not in self.exercise_data[str(self.round_number)]:
+                self.exercise_data[str(self.round_number)][exercise_name] = {}
+
+            self.exercise_data[str(self.round_number)][exercise_name] = {
+                'goal': goal,
+                'achieved': achieved
+            }
+
+            # Update data in Firebase Realtime Database
             round_ref = db.reference(f'fitness_data/{self.round_number}/{user_name}/{exercise_name}')
             round_ref.update({
                 'goal': goal,
@@ -486,7 +495,7 @@ class TeacherRoundPage(BoxLayout):
             else:
                 goal = 'N/A'
                 achieved = 'N/A'
-            
+
             # Create a label for each exercise's data
             exercise_label = Label(text=f'{exercise}: Goal - {goal}, Achieved - {achieved}', 
                                 size_hint_y=None, height='30dp', text_size=(None, None))
@@ -510,50 +519,53 @@ class ReportGeneration(BoxLayout):
         self.calculate_improvement()
 
     def calculate_improvement(self):
-        # Clear previous data from the table
         self.ids.table.clear_widgets()
 
-        # Initialize Firebase database reference
         fitness_data_ref = db.reference('fitness_data')
+        exercises = {}
 
-        # Asynchronously fetch fitness data
-        asyncio.ensure_future(self.fetch_fitness_data(fitness_data_ref, self.student_username))
+        # Iterate through each round (1 to 5)
+        for round_number in range(1, 6):
+            round_ref = fitness_data_ref.child(str(round_number)).child(self.student_username)
+            round_data = round_ref.get()
 
-    async def fetch_fitness_data(self, fitness_data_ref, student_username):
-        # Initialize dictionary to store exercise data
-        exercise_data = {}
-
-        # Fetch fitness data for the given student
-        student_data = fitness_data_ref.order_by_key().equal_to(student_username).get()
-
-        if student_data:
-            # Loop through each round in the fitness data
-            for round_number in range(1, 5):
-                round_data = student_data.get(str(round_number), {})
-                
-                # Loop through each exercise in the round data
+            if round_data:
                 for exercise, details in round_data.items():
-                    if exercise not in exercise_data:
-                        exercise_data[exercise] = []
+                    if exercise not in exercises:
+                        exercises[exercise] = []
 
-                    # Calculate improvement percent for the exercise
-                    initial_value = int(details.get("1", {}).get("achieved", 0))
-                    final_value = int(details.get("5", {}).get("achieved", 0))
-                    improvement_percent = ((final_value - initial_value) / initial_value) * 100
+                    # Safely convert goal and achieved to integers
+                    try:
+                        goal = int(details.get("goal", 0))
+                    except (ValueError, TypeError):
+                        goal = 0
 
-                    # Append improvement percent to exercise data
-                    exercise_data[exercise].append(improvement_percent)
+                    try:
+                        achieved = int(details.get("achieved", 0))
+                    except (ValueError, TypeError):
+                        achieved = 0
 
-            # Calculate average improvement percent for each exercise
-            for exercise, improvement_list in exercise_data.items():
-                average_improvement = sum(improvement_list) / len(improvement_list)
+                    exercises[exercise].append((goal, achieved))
 
-                # Display exercise name and average improvement percent
-                self.ids.table.add_widget(Label(text=exercise, size_hint_x=None, width=150))
-                self.ids.table.add_widget(Label(text=f"{round(average_improvement, 2)}%", size_hint_x=None, width=100))
-        else:
-            self.ids.table.add_widget(Label(text="No data found for this student"))
+        # Process and display improvement data
+        for exercise, rounds in exercises.items():
+            if len(rounds) >= 5:
+                initial_achieved = rounds[0][1]
+                final_achieved = rounds[4][1]
 
+                if initial_achieved != 0:
+                    improvement_percent = ((final_achieved - initial_achieved) / initial_achieved) * 100
+                else:
+                    improvement_percent = 0
+
+                self.ids.table.add_widget(Label(text=exercise, size_hint_x=None, width=150, halign='center'))
+                self.ids.table.add_widget(Label(text=f"{round(improvement_percent, 2)}%", size_hint_x=None, width=100, halign='center'))
+            else:
+                self.ids.table.add_widget(Label(text=f"Not enough data for {exercise}", size_hint_x=None, width=250, halign='center'))
+
+        if not exercises:
+            self.ids.table.add_widget(Label(text="No data found for this student", size_hint_x=None, width=400, halign='center'))
+            
 class FitnessApp(App):
     def build(self):
         self.startinghomepage = StartingHomepage()
