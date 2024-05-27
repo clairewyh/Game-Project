@@ -403,15 +403,11 @@
     ScrollView:
         GridLayout:
             id: table
-            cols: 6
+            cols: 2
             padding: "20dp"
             spacing: "10dp"
-            canvas.before:
-                Color:
-                    rgba: 0, 0, 0, 1
-                Line:
-                    points: [self.width/2, 0, self.width/2, self.height]
-                    width: 2
+            size_hint_y: None
+            height: self.minimum_height
 
 <ReportLabel@Label>:
     size_hint_y: None
@@ -420,5 +416,5 @@
         Color:
             rgba: 0, 0, 0, 1
         Line:
-            points: [self.width, 0, self.width, self.height]
+            points: [self.x, self.y, self.right, self.y]
             width: 2
