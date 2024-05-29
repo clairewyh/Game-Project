@@ -148,8 +148,9 @@
     BoxLayout:
         size_hint_y: 0.2
         Label:
+            id: class_name_label
             markup: True
-            text:'[b]Class Name[/b]'
+            text: '[b]Class Name[/b]'
             font_size: '1cm'
     
     Label:
@@ -193,7 +194,6 @@
         background_normal: ''
         bold: True
         on_press: root.switch_to_exercise_screen()
-
 
 <HomeScreen>:
     orientation: 'vertical'
