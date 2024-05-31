@@ -75,9 +75,8 @@
     padding: "10dp"
 
     canvas.before:
-        Color:
-            rgba: 0.2, 0.8, 1, 1
         Rectangle:
+            source: "bluegradient.png"
             pos: self.pos
             size: self.size
 
@@ -120,9 +119,8 @@
     name: 'class_list'
 
     canvas.before:
-        Color:
-            rgba: 0.2, 0.8, 1, 1
         Rectangle:
+            source: "bluegradient.png"
             pos: self.pos
             size: self.size
 
@@ -148,9 +146,8 @@
     BoxLayout:
         size_hint_y: 0.2
         Label:
-            id: class_name_label
             markup: True
-            text: '[b]Class Name[/b]'
+            text:'[b]Class Name[/b]'
             font_size: '1cm'
     
     Label:
@@ -195,6 +192,7 @@
         bold: True
         on_press: root.switch_to_exercise_screen()
 
+
 <HomeScreen>:
     orientation: 'vertical'
     spacing: '10dp'
@@ -204,7 +202,7 @@
     Label:
         text: 'Select Round'
         halign: 'center'
-        font_size: '40sp'
+        font_size: '20sp'
 
     Button:
         text: 'Round 1'
@@ -381,7 +379,7 @@
     orientation: "vertical"
     canvas.before:
         Color:
-            rgba: 0.2, 0.8, 1, 1
+            rgba: 0, 0.5, 1, 0.8
         Rectangle:
             pos: self.pos
             size: self.size
