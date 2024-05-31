@@ -13,7 +13,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 Builder.load_file('main.kv')
-cred = credentials.Certificate("/Users/celina/Desktop/projectmanagement-27c6b-firebase-adminsdk-z87rb-8af201d7bc.json")
+cred = credentials.Certificate("/Users/celina/Downloads/projectmanagement-27c6b-firebase-adminsdk-z87rb-6f1964ce7d.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://projectmanagement-27c6b-default-rtdb.firebaseio.com/'
 })
@@ -203,7 +203,7 @@ class StudentClassPage(ClassPage):
                 class_button = ClassButton(text=f"{class_name}: {class_code}", bold=True)
                 self.ids.classes_layout.add_widget(class_button)
                 self.add_student_to_class_list(class_code, student_name)
-                self.switch_to_student_homepage(class_name)  # Pass class name
+                self.switch_to_student_homepage()
 
                 # Update user's classes in Firebase Realtime Database
                 user_classes_ref = db.reference('user_classes')
@@ -230,9 +230,9 @@ class StudentClassPage(ClassPage):
                     return class_name
         return None
 
-    def switch_to_student_homepage(self, class_name):
+    def switch_to_student_homepage(self):
         self.clear_widgets()
-        student_homepage = StudentHomepage(class_name=class_name)  # Pass class name
+        student_homepage = StudentHomepage()
         self.add_widget(student_homepage)
     
     def show_popup(self, title, message):
@@ -305,11 +305,6 @@ class TeacherGoalpage(BoxLayout):
         App.get_running_app().switch_to_teacher_fitness_page()
 
 class StudentHomepage(BoxLayout):
-    def __init__(self, class_name="", **kwargs):
-        super(StudentHomepage, self).__init__(**kwargs)
-        self.class_name = class_name  # Store the class name
-        self.ids.class_name_label.text = f"[b]{self.class_name}[/b]"  # Update the label text with the class name
-
     def goal_setting(self):
         name = self.ids.name_input.text
         goal1 = self.ids.first_goal.text
@@ -334,12 +329,14 @@ class StudentHomepage(BoxLayout):
 
         self.show_popup('Success', 'Goals saved successfully.')
 
+    
+    # Popup display
     def show_popup(self, title, message):
         popup = Popup(title=title,
                       content=Label(text=message),
                       size_hint=(None, None), size=(400, 200))
         popup.open()
-
+    
     def switch_to_exercise_screen(self):
         App.get_running_app().switch_to_exercise_screen()
 
